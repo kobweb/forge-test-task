@@ -19,3 +19,5 @@
 - Metro and Expo always run from `apps/mobile` (the package scripts already do) · Uniwind resolves `cssEntryFile` against `process.cwd()` · styles missing if run from the repo root
 - The first `expo start --ios` downloads Expo Go SDK 57 (~550 MB) · no App Store build for SDK 57 on simulators · a slow first run, only once
 - turbo runs `@forge/contracts#test` uncached · the smoke test depends on apps/*/package.json, which is outside that task's hash, so a cached run replays a stale "not scaffolded yet" skip · ~1 s extra per `pnpm test`
+- heroui-native skill installed project-scoped and committed (D31) · implementers and reviewers see the same component guidance · vendor files in `.claude/skills/heroui-native/`
+- heroui-native installer run from a scratch directory, and only its `.claude/skills/heroui-native/` copied in · in project scope it also writes `.cursor/skills/` and `.agents/skills/` for every AI tool it finds on the machine (Cursor and Codex here), and neither belongs in this repo · re-running the installer inside the repo would add those two directories again; delete them
