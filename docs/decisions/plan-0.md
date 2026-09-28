@@ -8,3 +8,8 @@
 - `onboardingBodySchema.acceptConsent` is `z.boolean().pipe(z.literal(true))` · react-hook-form needs a boolean input for the checkbox, while the API still only accepts `true` · none
 - `newPasswordSchema` checks UTF-8 byte length (≤ 72) with a local helper instead of TextEncoder · bcrypt truncates at 72 bytes, and the contracts compile without DOM or Node lib types · none
 - The per-app smoke checks skip until the app's package.json exists · Plan 0 builds contracts before the apps exist · a skipped check could hide a missing app; Task 4 requires 0 skipped
+- API `tsconfig.json` sets `rootDir: "."`, and the build config sets `rootDir: "./src"` · TypeScript 6 errors (TS5011) when `outDir` is set without `rootDir`, which broke ts-jest · none
+- `incremental` removed from the API tsconfig · with Nest's `deleteOutDir`, the `tsbuildinfo` kept outside `dist/` made a rebuild skip `dist/main.js` · slightly slower `nest build`
+- Nest template extras (ts-loader, ts-node, tsconfig-paths, source-map-support, @types/express) removed · not in the approved dependency set, and unused; the filter types its response structurally · none
+- `.env` loads through `process.loadEnvFile()` in `main.ts`, `drizzle.config.ts` and `test/test-env.ts` · Node 24 built-in, no dotenv · none
+- e2e runs without `apps/api/.env` (the test env defaults `TEST_DATABASE_URL` and `JWT_SECRET`) · reviewers can run `pnpm test:e2e` right after `docker compose up` · none
