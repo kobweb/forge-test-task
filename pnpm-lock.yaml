@@ -15,6 +15,16 @@ importers:
         specifier: ^2.11.5
         version: 2.11.5
 
+  packages/contracts:
+    dependencies:
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
+    devDependencies:
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+
 packages:
 
   '@turbo/darwin-64@2.11.5':
@@ -56,6 +66,14 @@ packages:
     resolution: {integrity: sha512-qLXheqz3TUvJpHIV6MUBwkNkvwKxMVG/QsimyiKT9DfNWPHJ294G/i5nDaH+fbHJt3UH7orubNNxAqYkbUNGAQ==}
     hasBin: true
 
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+
 snapshots:
 
   '@turbo/darwin-64@2.11.5':
@@ -86,3 +104,7 @@ snapshots:
       '@turbo/linux-arm64': 2.11.5
       '@turbo/windows-64': 2.11.5
       '@turbo/windows-arm64': 2.11.5
+
+  typescript@6.0.3: {}
+
+  zod@4.6.5: {}
