@@ -1,14 +1,17 @@
 # Forge — Design Spec
 
 - **Date:** 2026-09-28 · **Revised:** 2026-09-29 (multiple goals) · **Status:** draft for review
-- **Inputs:** `CLAUDE.md`, `docs/product.md` (scope, rules, API surface, decisions A–D — final),
-  `.claude/rules/{contracts,api,mobile,git}.md`. Once approved, this file is the authority;
-  `docs/product.md` stays as the product brief.
+- **Inputs:** `CLAUDE.md`, `docs/product.md` (scope, rules, API surface, decisions A–D — final
+  except the amendments below), `.claude/rules/{contracts,api,mobile,git}.md`. Once approved,
+  this file is the authority; `docs/product.md` stays as the product brief, unedited.
 - **Decision references:** A–D are the product decisions in `docs/product.md`; D1–D36 are the
   rulings made in this spec (§13).
-- **Deviation from the brief (user ruling, 2026-09-29):** users pick one or more goals;
-  `docs/product.md` (Scope 2) says one. The plan itself stays the same for everyone — goals
-  personalise copy and the coach (D34–D36).
+- **Amendments to the brief** (user ruling, 2026-09-29). Where `docs/product.md` and this spec
+  disagree, this spec wins:
+  - Scope 2: "one goal" becomes one or more goals (1–3) from the same three options.
+  - Scope 4: the coach references the user's name, every selected goal and progress.
+  - Scope 5: Settings shows the selected goals where the brief says "goal".
+  - The plan stays the same for every goal mix; decision A is unchanged (D34–D36).
 
 ## 1. Intent
 
