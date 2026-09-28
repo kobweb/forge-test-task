@@ -11,6 +11,11 @@ export class ZodValidationPipe<TSchema extends z.ZodType> implements PipeTransfo
   constructor(private readonly schema: TSchema) {}
 
   transform(value: unknown): z.output<TSchema> {
+    // A POST with no JSON body reaches the pipe as undefined, and zod's default text for it
+    // is developer English, not user-facing copy.
+    if (value === undefined) {
+      throw new AppError('VALIDATION_FAILED', 'The request could not be read.');
+    }
     const result = this.schema.safeParse(value);
     if (!result.success) {
       throw new AppError(

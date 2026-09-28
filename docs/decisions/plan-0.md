@@ -13,7 +13,7 @@
 - Nest template extras (ts-loader, ts-node, tsconfig-paths, source-map-support, @types/express) removed · not in the approved dependency set, and unused; the filter types its response structurally · none
 - `.env` loads through `process.loadEnvFile()` in `main.ts`, `drizzle.config.ts` and `test/test-env.ts` · Node 24 built-in, no dotenv · none
 - e2e runs without `apps/api/.env` (the test env defaults `TEST_DATABASE_URL` and `JWT_SECRET`) · reviewers can run `pnpm test:e2e` right after `docker compose up` · none
-- `create-expo-app --no-agents-md`, and delete the nested `.git` it creates · it otherwise writes its own CLAUDE.md, AGENTS.md and .claude/settings.json and a git repo inside ours · none
+- `create-expo-app --no-agents-md`, and delete any nested `.git` it creates · it otherwise writes its own CLAUDE.md, AGENTS.md and .claude/settings.json, and may initialise a nested git repo (it did not inside our repo, because it detects the parent repository) · none
 - `src/env.d.ts` references `expo/types` and declares `*.css` · TypeScript 6 errors on unknown side-effect imports, and Expo's generated `expo-env.d.ts` is git-ignored · none
 - `src/uniwind-types.d.ts` is committed · `pnpm typecheck` must pass on a fresh clone before Metro has ever run · regenerate it if themes change
 - Metro and Expo always run from `apps/mobile` (the package scripts already do) · Uniwind resolves `cssEntryFile` against `process.cwd()` · styles missing if run from the repo root
@@ -21,3 +21,5 @@
 - turbo runs `@forge/contracts#test` uncached · the smoke test depends on apps/*/package.json, which is outside that task's hash, so a cached run replays a stale "not scaffolded yet" skip · ~1 s extra per `pnpm test`
 - heroui-native skill installed project-scoped and committed (D31) · implementers and reviewers see the same component guidance · vendor files in `.claude/skills/heroui-native/`
 - heroui-native installer run from a scratch directory, and only its `.claude/skills/heroui-native/` copied in · in project scope it also writes `.cursor/skills/` and `.agents/skills/` for every AI tool it finds on the machine (Cursor and Codex here), and neither belongs in this repo · re-running the installer inside the repo would add those two directories again; delete them
+- Postgres healthcheck probes TCP (`pg_isready -h localhost`) and the port binds to 127.0.0.1 · on a cold volume the socket probe went green while init.sql still ran on the socket-only init server, so `pnpm db:push` right after `docker compose up -d --wait` could hit ECONNREFUSED; the database has no reason to face the LAN · none
+- The zod pipe answers an undefined body with "The request could not be read." · without it a bodyless POST returned zod's default English text; the contracts are frozen, so the pipe is the place · none

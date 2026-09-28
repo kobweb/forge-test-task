@@ -25,4 +25,11 @@ describe('ZodValidationPipe', () => {
       thrownBy(() => pipe.transform({ email: 'nope', password: 'correct horse' })),
     ).toMatchObject({ code: 'VALIDATION_FAILED', message: 'Enter a valid email address.' });
   });
+
+  it("answers a missing body with the generic copy, not zod's default text", () => {
+    expect(thrownBy(() => pipe.transform(undefined))).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      message: 'The request could not be read.',
+    });
+  });
 });
