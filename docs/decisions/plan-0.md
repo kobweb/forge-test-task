@@ -13,3 +13,9 @@
 - Nest template extras (ts-loader, ts-node, tsconfig-paths, source-map-support, @types/express) removed · not in the approved dependency set, and unused; the filter types its response structurally · none
 - `.env` loads through `process.loadEnvFile()` in `main.ts`, `drizzle.config.ts` and `test/test-env.ts` · Node 24 built-in, no dotenv · none
 - e2e runs without `apps/api/.env` (the test env defaults `TEST_DATABASE_URL` and `JWT_SECRET`) · reviewers can run `pnpm test:e2e` right after `docker compose up` · none
+- `create-expo-app --no-agents-md`, and delete the nested `.git` it creates · it otherwise writes its own CLAUDE.md, AGENTS.md and .claude/settings.json and a git repo inside ours · none
+- `src/env.d.ts` references `expo/types` and declares `*.css` · TypeScript 6 errors on unknown side-effect imports, and Expo's generated `expo-env.d.ts` is git-ignored · none
+- `src/uniwind-types.d.ts` is committed · `pnpm typecheck` must pass on a fresh clone before Metro has ever run · regenerate it if themes change
+- Metro and Expo always run from `apps/mobile` (the package scripts already do) · Uniwind resolves `cssEntryFile` against `process.cwd()` · styles missing if run from the repo root
+- The first `expo start --ios` downloads Expo Go SDK 57 (~550 MB) · no App Store build for SDK 57 on simulators · a slow first run, only once
+- turbo runs `@forge/contracts#test` uncached · the smoke test depends on apps/*/package.json, which is outside that task's hash, so a cached run replays a stale "not scaffolded yet" skip · ~1 s extra per `pnpm test`

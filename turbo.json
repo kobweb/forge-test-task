@@ -15,6 +15,9 @@
     "test": {
       "dependsOn": ["^build"]
     },
+    "@forge/contracts#test": {
+      "cache": false
+    },
     "test:e2e": {
       "dependsOn": ["^build"],
       "cache": false
