@@ -1,11 +1,14 @@
 # Forge — Design Spec
 
-- **Date:** 2026-09-28 · **Status:** draft for review
+- **Date:** 2026-09-28 · **Revised:** 2026-09-29 (multiple goals) · **Status:** draft for review
 - **Inputs:** `CLAUDE.md`, `docs/product.md` (scope, rules, API surface, decisions A–D — final),
   `.claude/rules/{contracts,api,mobile,git}.md`. Once approved, this file is the authority;
   `docs/product.md` stays as the product brief.
-- **Decision references:** A–D are the product decisions in `docs/product.md`; D1–D33 are the
+- **Decision references:** A–D are the product decisions in `docs/product.md`; D1–D36 are the
   rulings made in this spec (§13).
+- **Deviation from the brief (user ruling, 2026-09-29):** users pick one or more goals;
+  `docs/product.md` (Scope 2) says one. The plan itself stays the same for everyone — goals
+  personalise copy and the coach (D34–D36).
 
 ## 1. Intent
 
@@ -135,9 +138,9 @@ export interface User {
   id: string;                       // uuid; JWT `sub`
   email: string;                    // lowercased
   displayName: string | null;
-  goal: Goal | null;
+  goals: Goal[];                    // a set in GOALS order; [] until onboarding (D34)
   consentAcceptedAt: string | null;
-  onboarded: boolean;               // displayName && goal && consentAcceptedAt, computed by the API
+  onboarded: boolean;               // name, ≥ 1 goal and consent all set; computed by the API
 }
 
 export interface SessionBlock { kind: BlockKind; title: string; detail: string }
@@ -184,10 +187,11 @@ domain types are declared `satisfies z.ZodType<DomainType>`. Timestamps are `z.i
 | | `loginBodySchema` → `LoginBody` | `{ email: emailSchema, password: string ≥ 1 }` — "Enter your password." |
 | | `authResponseSchema` → `AuthResponse` | `{ token: string, user: userSchema }` |
 | `me.ts` | `displayNameSchema` | trim, 1–40 — "Tell us what to call you." / "Keep it under 40 characters." |
-| | `goalSchema` | `z.enum(GOALS)` — "Pick a goal." |
-| | `userSchema` | `satisfies z.ZodType<User>` |
-| | `updateMeBodySchema` → `UpdateMeBody` | `{ displayName?, goal?, acceptConsent?: z.literal(true) }`, at least one key — "Nothing to update." |
-| | `onboardingBodySchema` → `OnboardingBody` | all three required; `acceptConsent: z.literal(true)` — "Please accept to continue." (the mobile onboarding form; any value is a valid `UpdateMeBody`) |
+| | `goalSchema` | `z.enum(GOALS)` |
+| | `goalsSchema` | array of `goalSchema`, 1–3 items — "Pick at least one goal."; the output drops duplicates and is sorted in `GOALS` order (D36) |
+| | `userSchema` | `satisfies z.ZodType<User>`; `goals` is a plain `z.array(goalSchema)` |
+| | `updateMeBodySchema` → `UpdateMeBody` | `{ displayName?, goals?: goalsSchema, acceptConsent?: z.literal(true) }`, at least one key — "Nothing to update." |
+| | `onboardingBodySchema` → `OnboardingBody` | all three required; `goals` uses `goalsSchema`; `acceptConsent: z.literal(true)` — "Please accept to continue." (the mobile onboarding form; any value is a valid `UpdateMeBody`) |
 | `plan.ts` | `sessionIdSchema`, `sessionBlockSchema`, `planSessionSchema`, `planViewSchema` | `planViewSchema satisfies z.ZodType<PlanView>` |
 | `coach.ts` | `coachMessageSchema` | `satisfies z.ZodType<CoachMessage>` |
 | | `sendCoachMessageBodySchema` → `SendCoachMessageBody` | `{ text }`, trim, 1–500 — "Type a message first." / "Keep it under 500 characters." |
@@ -244,10 +248,17 @@ migration files (D17).
 | `email` | text, not null, unique | already lowercased by `emailSchema` |
 | `password_hash` | text, not null | bcryptjs, cost 10 |
 | `display_name` | text, null | |
-| `goal` | `goal` enum, null | |
 | `consent_accepted_at` | timestamptz, null | set once (D33) |
 | `completed_count` | integer, not null, default 0, check ≥ 0 | decision A; the only plan state |
 | `created_at` | timestamptz, not null, default now() | |
+
+**`user_goals`** — one row per selected goal (D35); primary key `(user_id, goal)`, so a goal
+can't be stored twice
+
+| Column | Type | Notes |
+|---|---|---|
+| `user_id` | uuid, not null → `users.id` on delete cascade | |
+| `goal` | `goal` enum, not null | Postgres sorts enum values in declaration order, which is `GOALS` order |
 
 **`coach_messages`** — index `(user_id, id)`
 
@@ -268,8 +279,8 @@ migration files (D17).
 | `trial_ends_at` | timestamptz, not null | set on first purchase only |
 | `purchased_at` | timestamptz, not null, default now() | |
 
-Deleting the `users` row deletes everything the user owns: plan progress is on the row, and
-messages and entitlements cascade. There are no per-session rows (decision A).
+Deleting the `users` row deletes everything the user owns: plan progress is on the row;
+goals, messages and entitlements cascade. There are no per-session rows (decision A).
 
 ## 6. API — `apps/api`
 
@@ -282,11 +293,14 @@ live in `apps/api/test/in-memory/`. Unit specs sit next to their services.
 
 | Module | Service API | Port | Uses |
 |---|---|---|---|
-| users | `getMe(userId)` → User · `updateMe(userId, body)` → User · `deleteMe(userId)` | `UsersRepository`: `create`, `findByEmail`, `findById`, `update`, `delete` | — |
+| users | `getMe(userId)` → User · `updateMe(userId, body)` → User · `deleteMe(userId)` | `UsersRepository`: `create`, `findByEmail`, `findById`, `update`, `delete`; records carry `goals: Goal[]` | — |
 | auth | `signup(body)` → AuthResponse · `login(body)` → AuthResponse | `UsersRepository` (exported by users) | users |
 | plan | `getPlan(userId)` · `complete(userId, id)` · `reset(userId)` → PlanView | `PlanRepository`: `getCompletedCount`, `advanceFrom(userId, expected)` → number, `reset` | — |
 | billing | `get(userId)` · `purchase(userId, productId)` · `restore(userId)` → Entitlement | `BillingRepository`: `find`, `upsert` | — |
 | coach | `history(userId)` → CoachMessage[] · `send(userId, text)` → `{ message, reply }` | `CoachRepository`: `listRecent(userId, limit)`, `append(userId, role, text)` | users, plan, billing |
+
+The users Drizzle adapter owns both `users` and `user_goals`. Replacing goals is a delete +
+insert inside one transaction, so a reader never sees a half-written set (D35).
 
 Cross-cutting code, none of which is an extra layer:
 
@@ -343,9 +357,12 @@ NOT_FOUND, anything else → INTERNAL.
 - **Guard:** every non-`@Public()` route requires `Authorization: Bearer <jwt>`. The token must
   verify and `sub` must still exist, so a deleted account's token gets 401.
 - **`PATCH /me`:**
-  - Applies the fields provided.
+  - Applies the fields provided; omitted fields stay as they are.
+  - `goals` replaces the whole set (D36). It is stored as one `user_goals` row per goal and
+    always returned in `GOALS` order.
   - `acceptConsent: true` sets `consentAcceptedAt = now()` only when it is null. It is never
     overwritten and cannot be revoked; deleting the account is the revocation path (D33).
+  - `onboarded` becomes true once the name, at least one goal and consent are all set.
 - **`DELETE /me`:** deletes the `users` row; the rest cascades.
 
 ### 6.5 Plan (decision A)
@@ -372,7 +389,7 @@ The template lives in `src/plan/plan.template.ts` (content in §9.1) and ships i
 - **`send`:**
   1. Append the user message.
   2. Build the reply with `composeCoachReply(context, text)` — pure and deterministic, §9.2.
-     Context: `displayName`, `goal`, `completedCount`, `totalCount`, and the next session's
+     Context: `displayName`, `goals`, `completedCount`, `totalCount`, and the next session's
      title, duration and block count, taken from `PlanService.getPlan`.
   3. `await delay()`.
   4. Append the coach message.
@@ -419,7 +436,7 @@ src/app/
 │  ├─ coach.tsx
 │  └─ settings.tsx
 ├─ session/[id].tsx     pushed over the tabs
-├─ profile.tsx          edit name + goal
+├─ profile.tsx          edit name + goals
 └─ paywall.tsx          presentation: 'modal'
 ```
 
@@ -504,7 +521,7 @@ colour changes and haptics stay.
 
 | Moment | Motion | Haptic |
 |---|---|---|
-| Tick a block | check glyph scales in | selection |
+| Tick a block or toggle a goal card | check glyph scales in | selection |
 | Last block ticked | "Complete session" enables with a one-off scale pulse | — |
 | Session completed | navigate back | notification success |
 | Plan regains focus after a completion or restart | newly open card: scale 0.96 → 1 spring, border animates to accent, the connector segment above it fills — once (decision D) | impact medium |
@@ -558,13 +575,15 @@ Skeleton, SkeletonGroup, Spinner, PressableFeedback.
 **Onboarding** — primary "Start training"
 - "Make it yours" / "Three quick things before your first session."
 - Name TextField: label "What should we call you?", placeholder "Your first name".
-- Goal: RadioGroup of three card-style options, each with a label and a one-liner (§9.1).
+- Goals: label "What are you training for?", Description "Pick as many as you like." Three
+  card-style toggles, each a Checkbox with the goal's label and one-liner (§9.1); a selected
+  card gets an accent border. FieldError "Pick at least one goal."
 - Consent: Checkbox with "I agree that Forge stores my profile, progress and coach messages to
   personalise my training. I can delete all of it in Settings."
 - On success, `['me']` is replaced and the guard moves to the tabs.
 
 **Plan** (decision D) — primary: the sticky "Next session" bar
-- **Header:** time-of-day greeting "Good morning, {name}", a goal Chip, "{n} of 3 complete",
+- **Header:** time-of-day greeting "Good morning, {name}", one Chip per goal, "{n} of 3 complete",
   and a three-segment progress bar (completed segments in accent).
 - **Timeline:** three cards joined by a vertical connector on a left rail of status nodes. Each
   card shows the overline "Session {number} · {min} min", title, subtitle and a status line:
@@ -607,7 +626,7 @@ Skeleton, SkeletonGroup, Spinner, PressableFeedback.
 **Coach** — entitlement loading → skeleton; error → ScreenState + "Try again"
 - **Free (teaser)** — primary "Unlock Coach", which opens `/paywall`.
   - "Meet your coach" / "Ask about your next session, warm-ups or fitting training into a busy
-    day. Your coach knows your goal and your progress."
+    day. Your coach knows your goals and your progress."
   - Three benefit lines.
 - **Plus (chat)** — primary: send.
   - **Empty:** coach Avatar, "Hi {name}, I'm your Forge coach." / "Ask me anything about your
@@ -638,7 +657,7 @@ Skeleton, SkeletonGroup, Spinner, PressableFeedback.
 
   | Section | Row | Behaviour |
   |---|---|---|
-  | Profile | Name, Goal | open `/profile` |
+  | Profile | Name; Goals (labels joined, e.g. "Get stronger, Move daily") | open `/profile` |
   | Privacy | "Data consent — Accepted {d MMM yyyy}" | read-only; `Intl.DateTimeFormat` |
   | Membership | "Forge Plus · Trial ends {d MMM}" or "Free — See Forge Plus" | free opens `/paywall` (D26) |
   | Account | "Log out" | runs `signOut()` |
@@ -651,7 +670,7 @@ Skeleton, SkeletonGroup, Spinner, PressableFeedback.
 - Footer: "Forge {version}".
 
 **Edit profile** `/profile` — primary "Save changes" (enabled once dirty)
-- Name and goal fields, shared with onboarding.
+- Name and goals fields, shared with onboarding.
 - On success: toast "Profile updated" and go back.
 
 **Root ErrorBoundary:** ScreenState "Something went wrong" + "Try again".
@@ -676,24 +695,26 @@ Skeleton, SkeletonGroup, Spinner, PressableFeedback.
 ### 9.2 Coach replies — `composeCoachReply` (pure, deterministic)
 
 - **Name:** `displayName`, or "there" (defensive only: the app reaches Coach after onboarding).
-- **Goal phrase:** get_stronger "getting stronger", move_daily "moving every day", build_habit
-  "building a habit that sticks", null "training".
+- **Goals phrase:** each selected goal's phrase — get_stronger "getting stronger", move_daily
+  "moving every day", build_habit "building a habit that sticks" — in `GOALS` order, joined as
+  "a", "a and b" or "a, b and c". No goals → "training".
 - **Progress line:**
   - 0 done: "You haven't started yet — Foundation is open."
   - 1–2 done: "You've completed {n} of 3 sessions; {next} is up next."
   - 3 done: "You've completed all 3 sessions."
 
-Reply = `{body} {progress line}`. Every reply contains the name, the goal phrase and the progress
-line. The intent is the first match (substring, lowercased message) in this order:
+Reply = `{body} {progress line}`. Every reply contains the name, every selected goal's phrase
+(through `{goals}`) and the progress line. Every template reads correctly with one, two or
+three goals. The intent is the first match (substring, lowercased message) in this order:
 
 | Intent | Matches | Body |
 |---|---|---|
-| recovery | sore, pain, hurt, rest, recover | "{name}, some soreness after a new session is normal; sharp pain isn't — stop and get it checked. Easy walking helps you recover and keep {goal}." |
-| warm-up | warm, mobility, stretch | "Start easy, {name}: five minutes of mobility for hips, shoulders and ankles, then a few slow reps of your first exercise. It's the cheapest win for {goal}." |
-| short on time | time, busy, quick, short, minutes | "Short on time, {name}? Do the warm-up and main set of {next, or Foundation when complete} and skip the rest. Consistency beats length when you're {goal}." |
-| consistency | consisten, habit, motivat, skip, tired | "{name}, tie training to something you already do every day and keep the bar low — one session this week is a real win for {goal}." |
-| next | next, today, session, plan | open: "{name}, your next session is {next}: {min} minutes across {k} blocks, built for {goal}. Keep the main set steady and finish every block." · complete: "{name}, the plan is done. Restart it from the Plan tab and aim for smoother reps on the second pass — that's how {goal} compounds." |
-| fallback | — | "Good question, {name}. I can help with your next session, warming up, short workouts or staying consistent while you're {goal}." |
+| recovery | sore, pain, hurt, rest, recover | "{name}, some soreness after a new session is normal; sharp pain isn't — stop and get it checked. Easy walking helps you recover and keep {goals}." |
+| warm-up | warm, mobility, stretch | "Start easy, {name}: five minutes of mobility for hips, shoulders and ankles, then a few slow reps of your first exercise. It's the cheapest win for {goals}." |
+| short on time | time, busy, quick, short, minutes | "Short on time, {name}? Do the warm-up and main set of {next, or Foundation when complete} and skip the rest. Consistency beats length when you're {goals}." |
+| consistency | consisten, habit, motivat, skip, tired | "{name}, tie training to something you already do every day and keep the bar low — one session this week is a real win for {goals}." |
+| next | next, today, session, plan | open: "{name}, your next session is {next}: {min} minutes across {k} blocks, built for {goals}. Keep the main set steady and finish every block." · complete: "{name}, the plan is done. Restart it from the Plan tab and aim for smoother reps on the second pass — that's how progress compounds when you're {goals}." |
+| fallback | — | "Good question, {name}. I can help with your next session, warming up, short workouts or staying consistent while you're {goals}." |
 
 Suggested prompts (mobile, empty state), each mapping to one intent: "What's my next session?",
 "How should I warm up?", "I only have 15 minutes", "How do I stay consistent?".
@@ -705,7 +726,7 @@ Suggested prompts (mobile, empty state), each mapping to one intent: "What's my 
 | forge_plus_yearly (default) | Yearly | $59.99 / year | "Best value" Chip · "$5.00 / month, billed yearly" |
 | forge_plus_monthly | Monthly | $9.99 / month | — |
 
-Benefit lines (teaser and paywall): "Answers that know your goal and progress" · "Help on
+Benefit lines (teaser and paywall): "Answers that know your goals and progress" · "Help on
 warm-ups, short workouts and recovery" · "Your conversation history, private to you".
 
 ## 10. Testing
@@ -715,17 +736,19 @@ warm-ups, short workouts and recovery" · "Your conversation history, private to
 - **auth.service:** signup stores a hash (not the password) and a lowercased email; a duplicate
   → EMAIL_TAKEN; login returns a token whose `sub` verifies; a wrong password and an unknown
   email both → INVALID_CREDENTIALS.
-- **users.service:** `onboarded` mapping; partial updates; `acceptConsent` sets the timestamp
-  once (a second call keeps the first date); `onboarded` is true only with all three fields;
-  `deleteMe` removes the user.
+- **users.service:** `onboarded` mapping; partial updates leave omitted fields (goals
+  included) as they were; `goals` replaces the whole set and comes back in `GOALS` order;
+  `acceptConsent` sets the timestamp once (a second call keeps the first date); `onboarded` is
+  true only with a name, at least one goal and consent; `deleteMe` removes the user.
 - **plan.service:**
   - A fresh user gets [open, locked, locked] and `nextSessionId` foundation.
   - Completing the open session advances; completing a completed one returns the unchanged view;
     completing a locked one → SESSION_LOCKED; an unknown id → SESSION_NOT_FOUND.
   - After all three, `nextSessionId` is null; reset returns to 0.
   - Two users progress independently.
-- **coach-reply:** every intent, including its precedence; every reply contains the name, goal
-  phrase and progress line; same input → same output; null name and goal fallbacks.
+- **coach-reply:** every intent, including its precedence; the goals phrase for 0, 1, 2 and 3
+  goals; every reply contains the name, each selected goal's phrase and the progress line; same
+  input → same output; the null-name fallback.
 - **coach.service:**
   - A free user → PLUS_REQUIRED on both history and send.
   - `send` appends the user message, awaits the delay, then appends the coach message.
@@ -739,8 +762,15 @@ warm-ups, short workouts and recovery" · "Your conversation history, private to
 Setup: the Jest `globalSetup` runs `drizzle-kit push --force` against `TEST_DATABASE_URL`; each
 test uses unique emails; coach latency is 0 (D18).
 
-1. **Auth:** signup → login → `GET /me`; duplicate → 409; wrong password → 401; missing or
-   garbage token → 401; every error body has the `{code, message}` shape.
+1. **Auth and profile:**
+   - signup → login → `GET /me` (`goals: []`, `onboarded: false`).
+   - `PATCH /me` with a name, goals `[move_daily, get_stronger, move_daily]` and consent → 200
+     with `goals: [get_stronger, move_daily]` and `onboarded: true` (dedup, ordering and the
+     `user_goals` round-trip).
+   - `PATCH /me` with `goals: []` → 400 "Pick at least one goal."; with `[build_habit]` → the
+     set is replaced.
+   - Duplicate signup → 409; wrong password → 401; missing or garbage token → 401; every error
+     body has the `{code, message}` shape.
 2. **Plan order:**
    1. Fresh plan.
    2. Complete forge → 409 SESSION_LOCKED.
@@ -748,8 +778,8 @@ test uses unique emails; coach latency is 0 (D18).
    4. Complete build → reset → the plan is fresh again.
    5. Unknown id → 404.
 3. **Isolation and gate:**
-   - User A onboards (`PATCH /me`), purchases, then chats; the reply names A and the history
-     holds 2 messages.
+   - User A onboards (`PATCH /me`), purchases, then chats; the reply names A and mentions each
+     of A's goals, and the history holds 2 messages.
    - User B is free → 403 on both coach endpoints.
    - B's plan is untouched by A's progress.
 4. **Deletion:** `DELETE /me` → 204; the same token → 401; login → 401; no rows remain for that
@@ -872,7 +902,7 @@ In this order:
 | D23 | Checklist ticks are client-only (in memory) and gate "Complete session" | decision A forbids per-session rows; gating gives the checklist a purpose | ticks reset when the app is killed |
 | D24 | Locked sessions open a read-only preview | full-opacity locked cards (decision D) invite a tap | none |
 | D25 | Restart has no confirmation; Foundation replays the unlock motion | low stakes; redoing the sessions reverses it | an accidental restart loses the 3/3 state |
-| D26 | Settings adds a Membership row and an Edit profile screen (`PATCH /me`) | entitlement is visible and name/goal are editable, for about one screen of work | small scope growth; the first thing cut inside Settings |
+| D26 | Settings adds a Membership row and an Edit profile screen (`PATCH /me`) | entitlement is visible and name/goals are editable, for about one screen of work | small scope growth; the first thing cut inside Settings |
 | D27 | Mobile parses every response with its contracts schema | drift surfaces as a clear error, not a silent `undefined` | negligible CPU |
 | D28 | `signOut()` clears the token, both caches and the in-memory stores; any authenticated 401 signs out | "their data only" on a shared device | none |
 | D29 | `dev:api` and `dev:mobile` use `pnpm --filter`, not turbo | keeps Expo's interactive CLI usable | none |
@@ -880,6 +910,9 @@ In this order:
 | D31 | heroui-native skill installed project-scoped and committed | implementers and reviewers see the same guidance | vendor files in `.claude/skills/` |
 | D32 | `User.onboarded` is computed by the API | the client renders, it doesn't derive rules | none |
 | D33 | Consent is a timestamp set once, with no withdrawal | deleting the account is the revocation path | a "withdraw consent" feature would need a new endpoint |
+| D34 | Users pick 1–3 goals: a set returned in `GOALS` order, with no "primary" goal; the plan is the same for every goal mix | user ruling (2026-09-29) overriding the brief's single goal; a fixed order keeps the API and coach replies deterministic; decision A keeps one plan | no way to say which goal matters most — that would need a primary flag or a `position` column |
+| D35 | Goals live in a `user_goals` table (PK `user_id, goal`, cascade), not in an array column on `users` | the database enforces "each goal once" and cascades on delete; the users port hides the storage (`goals: Goal[]`) | a goals update is delete + insert in one transaction, and a read needs a second query |
+| D36 | `PATCH /me` `goals` replaces the whole set; the schema drops duplicates and sorts | the goals picker always submits the full selection, so no add/remove endpoints are needed | two devices editing at once: last write wins |
 
 ## 14. Risks
 
