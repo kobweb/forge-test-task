@@ -1,5 +1,5 @@
 import type { SessionBlock } from '@forge/contracts';
-import { ControlField, Surface, Typography } from 'heroui-native';
+import { Checkbox, ControlField, Surface, Typography } from 'heroui-native';
 import { View } from 'react-native';
 import { Icon } from '@/components/icon';
 import { BLOCK_LABELS } from '@/content/labels';
@@ -39,7 +39,12 @@ export function CheckableBlockRow({
       className="rounded-3xl bg-surface p-4"
     >
       <BlockText block={block} muted={false} />
-      <ControlField.Indicator variant="checkbox" />
+      {/* The row is surface-coloured, and so is the primary checkbox's field colour in dark
+          (its shadow is transparent there), so the unticked box vanished; `secondary` sits on
+          `default`, which differs from surface in both modes. */}
+      <ControlField.Indicator>
+        <Checkbox variant="secondary" />
+      </ControlField.Indicator>
     </ControlField>
   );
 }

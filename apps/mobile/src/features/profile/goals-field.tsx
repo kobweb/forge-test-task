@@ -1,6 +1,6 @@
 import { GOALS, type Goal } from '@forge/contracts';
 import * as Haptics from 'expo-haptics';
-import { cn, ControlField, Description, FieldError, Label } from 'heroui-native';
+import { Checkbox, cn, ControlField, Description, FieldError, Label } from 'heroui-native';
 import { View } from 'react-native';
 import { useController, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 import { GOAL_LABELS } from '@/content/labels';
@@ -49,7 +49,11 @@ export function GoalsField<TValues extends FieldValues, TOutput>({
               <Label>{GOAL_LABELS[goal].title}</Label>
               <Description>{GOAL_LABELS[goal].description}</Description>
             </View>
-            <ControlField.Indicator variant="checkbox" />
+            {/* On a surface-coloured card the primary checkbox is invisible in dark (same field
+                colour, transparent shadow); `secondary` keeps a visible box in both modes. */}
+            <ControlField.Indicator>
+              <Checkbox variant="secondary" />
+            </ControlField.Indicator>
           </ControlField>
         );
       })}
