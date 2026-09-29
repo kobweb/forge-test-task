@@ -1,5 +1,6 @@
 import type { PlanView } from '@forge/contracts';
 import request from 'supertest';
+import { PLAN_REPOSITORY, type PlanRepository } from '../src/plan/plan.repository';
 import { bearer, createApp, signUp, type TestApp } from './e2e-helpers';
 
 describe('Plan order (e2e)', () => {
@@ -51,6 +52,15 @@ describe('Plan order (e2e)', () => {
     expect([a.status, b.status]).toEqual([200, 200]);
     const plan = await request(app.getHttpServer()).get('/plan').set(bearer(other)).expect(200);
     expect((plan.body as PlanView).completedCount).toBe(1);
+  });
+
+  it('ignores a stale advance', async () => {
+    const { token: fresh, user } = await signUp(app);
+    const repository = app.get<PlanRepository>(PLAN_REPOSITORY);
+    // The count is 0, so expecting 1 is stale: the write must be a no-op that reports 0.
+    expect(await repository.advanceFrom(user.id, 1)).toBe(0);
+    const plan = await request(app.getHttpServer()).get('/plan').set(bearer(fresh)).expect(200);
+    expect((plan.body as PlanView).completedCount).toBe(0);
   });
 
   it('answers an unknown session id with 404', async () => {
