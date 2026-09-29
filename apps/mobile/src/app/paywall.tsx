@@ -1,6 +1,7 @@
 import { PRODUCT_IDS, type ProductId } from '@forge/contracts';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { Chip, CloseButton, cn, LinkButton, RadioGroup, Typography, useToast } from 'heroui-native';
 import { useState } from 'react';
 import { Platform, ScrollView, View } from 'react-native';
@@ -22,12 +23,15 @@ export default function PaywallScreen() {
 
   const selectProduct = (value: string) => {
     const id = PRODUCT_IDS.find((candidate) => candidate === value);
-    if (!id) return;
+    // HeroUI reports a tap on the already-selected card too: no change, no haptic.
+    if (!id || id === productId) return;
     void Haptics.selectionAsync();
     setProductId(id);
   };
 
-  const startTrial = () =>
+  // Each action clears the other's stale error first, since the Alert shows whichever is set.
+  const startTrial = () => {
+    restore.reset();
     purchase.mutate(productId, {
       onSuccess: () => {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -35,8 +39,10 @@ export default function PaywallScreen() {
         router.back();
       },
     });
+  };
 
-  const restorePurchases = () =>
+  const restorePurchases = () => {
+    purchase.reset();
     restore.mutate(undefined, {
       onSuccess: (entitlement) => {
         if (entitlement.tier === 'plus') {
@@ -48,11 +54,16 @@ export default function PaywallScreen() {
         }
       },
     });
+  };
 
-  // Uniwind applies `android:`-scoped classes on iOS too (1.12.0), so the platform check is done
-  // at runtime: Android's edge-to-edge modal needs the status-bar padding, the iOS sheet does not.
+  // `android:`-scoped classes were observed to apply on iOS with Uniwind 1.12.0 in Expo Go, so the
+  // platform check is done at runtime: Android's edge-to-edge modal needs the status-bar padding,
+  // the iOS sheet does not.
   return (
     <View className={cn('flex-1 bg-background', Platform.OS === 'android' && 'pt-safe')}>
+      {/* The iOS sheet sits on a dark backdrop, where the root's dark status-bar text vanishes;
+          the entry pops off React Native's StatusBar stack when the modal unmounts. */}
+      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
       <ScrollView contentContainerClassName="gap-6 px-6 pb-6 pt-4">
         <View className="flex-row justify-end">
           <CloseButton onPress={() => router.back()} accessibilityLabel="Close" />
@@ -87,6 +98,7 @@ export default function PaywallScreen() {
         <SubmitButton
           label="Start 7-day trial"
           isPending={purchase.isPending}
+          isDisabled={restore.isPending}
           onPress={startTrial}
         />
         <Typography type="body-xs" color="muted" align="center">
