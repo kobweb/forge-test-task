@@ -25,6 +25,9 @@ pnpm dev:api
 
 ## Endpoints
 
+Every endpoint with a body can also answer 400 `VALIDATION_FAILED`, and every bearer endpoint
+401 `UNAUTHORIZED`.
+
 | Endpoint | Auth | Success | Notable errors |
 |---|---|---|---|
 | `POST /auth/signup` | public | 201 `{ token, user }` | 409 `EMAIL_TAKEN` |

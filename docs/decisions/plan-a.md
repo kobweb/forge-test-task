@@ -1,6 +1,6 @@
 # Plan A — decisions (what · why · cost if wrong)
 
-- The guard looks the user up on every request (spec D14) · a deleted account's token stops working at once · one primary-key query per request
+- The guard looks the user up on every request (spec D14) · a deleted account's token stops working at once · two queries per request (`findById` reads the user row, then its goals)
 - Unique-violation detection also checks `error.cause.code === '23505'` · drizzle 0.45 wraps driver errors in DrizzleQueryError · a driver change needs a new check (the racing-signup e2e would catch it)
 - `DUMMY_HASH` is a precomputed bcrypt hash constant · computing one at import would add ~70 ms to every boot and every test file · none
 - Goals are replaced with delete + insert inside one transaction and read back with `ORDER BY goal` · Postgres sorts enum values by declaration order, which is `GOALS` order · reordering the enum would reorder output
