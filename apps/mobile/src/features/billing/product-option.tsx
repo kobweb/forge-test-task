@@ -35,7 +35,11 @@ export function ProductOption({
           </Typography>
         ) : null}
       </View>
-      <Radio />
+      {/* The card is surface-coloured and the primary radio's field colour equals surface in
+          dark (its shadow is transparent there), so the unselected ring vanished; `secondary`
+          sits on `default`, which differs from surface in both modes. Selection still paints
+          the accent fill. */}
+      <Radio variant="secondary" />
     </RadioGroup.Item>
   );
 }
