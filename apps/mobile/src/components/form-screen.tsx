@@ -1,7 +1,10 @@
 import { cn, Typography } from 'heroui-native';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+  KeyboardAwareScrollView,
+  type KeyboardAwareScrollViewRef,
+} from 'react-native-keyboard-controller';
 
 interface FormScreenProps {
   title?: string;
@@ -12,6 +15,9 @@ interface FormScreenProps {
   hasHeader?: boolean;
 }
 
+// Helper line + gap + 56 pt submit button below the focused field's caret, plus a 24 pt margin.
+const KEYBOARD_BOTTOM_OFFSET = 144;
+
 /** Scrollable, keyboard-aware form layout: the focused field is never hidden by the keyboard. */
 export function FormScreen({
   title,
@@ -20,9 +26,11 @@ export function FormScreen({
   footer,
   hasHeader = false,
 }: FormScreenProps) {
+  const scrollRef = useRef<KeyboardAwareScrollViewRef>(null);
   return (
     <KeyboardAwareScrollView
-      bottomOffset={24}
+      ref={scrollRef}
+      bottomOffset={KEYBOARD_BOTTOM_OFFSET}
       keyboardShouldPersistTaps="handled"
       className="flex-1 bg-background"
       contentContainerClassName={cn(
@@ -40,7 +48,10 @@ export function FormScreen({
           ) : null}
         </View>
       ) : null}
-      <View className="gap-5">{children}</View>
+      {/* A form Alert or an inline error re-lays out the fields under an open keyboard. */}
+      <View className="gap-5" onLayout={() => scrollRef.current?.assureFocusedInputVisible()}>
+        {children}
+      </View>
       {footer ? <View className="mt-auto items-center">{footer}</View> : null}
     </KeyboardAwareScrollView>
   );
