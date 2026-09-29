@@ -56,6 +56,13 @@ describe('JwtAuthGuard', () => {
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
+  it('rejects a valid token sent under a non-bearer scheme', async () => {
+    const token = await jwt.signAsync({ sub: userId });
+    await expect(
+      guard.canActivate(contextFor('privateRoute', `Basic ${token}`).context),
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
   it('rejects a valid token whose account was deleted', async () => {
     const token = await jwt.signAsync({ sub: userId });
     await users.delete(userId);
