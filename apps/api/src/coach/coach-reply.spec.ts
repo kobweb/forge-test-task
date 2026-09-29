@@ -28,8 +28,11 @@ describe('detectIntent', () => {
   it.each([
     ["I'm sore after my session", 'recovery'],
     ['Sore legs', 'recovery'], // matching ignores case
+    ['My hips hurt when I stretch', 'recovery'], // "stretch" matches warmUp too: first match wins
     ['How should I warm up for my next session?', 'warmUp'],
+    ['Quick warm-up?', 'warmUp'], // "quick" matches shortOnTime too: first match wins
     ['I only have 15 minutes today', 'shortOnTime'],
+    ['Too busy and tired', 'shortOnTime'], // "tired" matches consistency too: first match wins
     ['How do I stay consistent?', 'consistency'],
     ['I keep skipping my session', 'consistency'], // "session" matches next too: first match wins
     ["What's my next session?", 'next'],
@@ -70,6 +73,9 @@ describe('composeCoachReply', () => {
   it('points to a restart once the plan is complete', () => {
     const done = context({ completedCount: 3, next: null });
     const reply = composeCoachReply(done, "What's my next session?");
+    expect(reply).toContain('Alex');
+    expect(reply).toContain('getting stronger');
+    expect(reply).toContain('moving every day');
     expect(reply).toContain('the plan is done. Restart it from the Plan tab');
     expect(reply).toContain("You've completed all 3 sessions.");
   });
