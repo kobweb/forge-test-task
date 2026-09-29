@@ -66,8 +66,10 @@ function RootNavigator() {
   const me = useMe();
 
   // The splash stays up until we know which stack to show: token read, cache restored, and
-  // (for a signed-in user without a cached profile) the first GET /me settled.
-  const ready = sessionHydrated && !restoringCache && !(signedIn && me.isPending);
+  // (for a signed-in user without a cached profile) the first GET /me settled. A retry after
+  // that first failure keeps the error screen up instead of returning to a blank window.
+  const ready =
+    sessionHydrated && !restoringCache && !(signedIn && me.isPending && me.errorUpdateCount === 0);
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
@@ -83,6 +85,7 @@ function RootNavigator() {
         body="Check your connection and try again."
         actionLabel="Try again"
         onAction={() => void me.refetch()}
+        isActionPending={me.isFetching}
       />
     );
   }

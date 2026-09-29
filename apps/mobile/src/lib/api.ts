@@ -72,7 +72,10 @@ async function send(method: Method, path: string, body: unknown): Promise<Respon
   if (response.ok) return response;
 
   const parsed = apiErrorSchema.safeParse(await response.json().catch(() => null));
-  if (response.status === 401 && token) handleUnauthorized();
+  // Only while that token is still current: concurrent or late 401s must not sign out twice.
+  if (response.status === 401 && token && useSession.getState().token === token) {
+    handleUnauthorized();
+  }
   throw parsed.success
     ? new ApiError(parsed.data.code, parsed.data.message, response.status)
     : new ApiError('INTERNAL', 'Something went wrong. Please try again.', response.status);

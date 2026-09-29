@@ -8,10 +8,18 @@ interface ScreenStateProps {
   body?: string;
   actionLabel?: string;
   onAction?: () => void;
+  isActionPending?: boolean;
 }
 
 /** Full-screen empty / error / not-found state with at most one action. */
-export function ScreenState({ icon, title, body, actionLabel, onAction }: ScreenStateProps) {
+export function ScreenState({
+  icon,
+  title,
+  body,
+  actionLabel,
+  onAction,
+  isActionPending,
+}: ScreenStateProps) {
   return (
     <View className="flex-1 items-center justify-center gap-5 bg-background px-8">
       <View className="size-14 items-center justify-center rounded-full bg-accent-soft">
@@ -28,7 +36,7 @@ export function ScreenState({ icon, title, body, actionLabel, onAction }: Screen
         ) : null}
       </View>
       {actionLabel && onAction ? (
-        <Button variant="secondary" onPress={onAction}>
+        <Button variant="secondary" onPress={onAction} isDisabled={isActionPending}>
           {actionLabel}
         </Button>
       ) : null}

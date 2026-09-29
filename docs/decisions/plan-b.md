@@ -8,3 +8,5 @@
 - The splash uses `expo-splash-screen` directly · expo-router's `SplashScreen` export is marked hidden · none
 - The root `ErrorBoundary` uses plain RN + Uniwind classes, not HeroUI · it must render even when the providers are what failed · it looks slightly plainer
 - Session hydration uses `useSyncExternalStore` · the React Compiler lint rejects setState inside an effect · none
+- A 401 signs out only while the token it carried is still the current one · concurrent requests with an expired token, or a late answer after deleting the account, would otherwise stack "session ended" toasts or sign out the next user · none
+- The splash waits only for the first GET /me; a retry keeps the error screen up with "Try again" disabled · after the splash hides, rendering null showed a blank window for the whole retry · none
