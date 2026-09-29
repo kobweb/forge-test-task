@@ -12,8 +12,13 @@ interface DeleteAccountDialogProps {
 export function DeleteAccountDialog({ isOpen, onOpenChange }: DeleteAccountDialogProps) {
   // On success the hook signs out: the guard leaves Settings and a toast confirms the deletion.
   const deleteAccount = useDeleteAccount();
+  // The dialog stays mounted, so a failed attempt's alert is cleared whenever it closes.
+  const handleOpenChange = (open: boolean) => {
+    if (!open) deleteAccount.reset();
+    onOpenChange(open);
+  };
   return (
-    <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Dialog isOpen={isOpen} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay />
         <Dialog.Content>
@@ -37,7 +42,11 @@ export function DeleteAccountDialog({ isOpen, onOpenChange }: DeleteAccountDialo
               isPending={deleteAccount.isPending}
               onPress={() => deleteAccount.mutate()}
             />
-            <Button variant="tertiary" onPress={() => onOpenChange(false)}>
+            <Button
+              variant="tertiary"
+              isDisabled={deleteAccount.isPending}
+              onPress={() => handleOpenChange(false)}
+            >
               Cancel
             </Button>
           </View>
