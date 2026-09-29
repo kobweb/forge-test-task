@@ -33,8 +33,8 @@ The first `i` installs Expo Go for SDK 57 on the simulator (a large download).
 ## Verified on
 
 - iPhone 16 simulator (iOS 18.4), Expo Go SDK 57, light and dark.
-- Android: not verified locally: there was no Android emulator (AVD) on the development
-  machine. Point `EXPO_PUBLIC_API_URL` at `http://10.0.2.2:3000` to try it.
+- Android emulator (Pixel_9_Pro, Android 16), Expo Go SDK 57: sign-in, onboarding and Plan
+  checked in light and dark.
 
 Screenshots: [`docs/screenshots/`](../../docs/screenshots/). Decisions:
 [`docs/decisions/plan-b.md`](../../docs/decisions/plan-b.md).

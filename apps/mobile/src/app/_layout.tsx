@@ -45,7 +45,12 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider>
+      {/* Android: unless both bars are declared translucent, the provider pads the root by the
+          system-bar insets and the window background shows through as a white band above and
+          below the app (glaring in dark mode, with the light status-bar icons lost on it). With
+          the flags set the app draws under both bars, like iOS, and the safe-area paddings take
+          the insets. Both props are no-ops on iOS. */}
+      <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
         <HeroUINativeProvider config={{ devInfo: { stylingPrinciples: false } }}>
           <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
             <NoticeToaster />
