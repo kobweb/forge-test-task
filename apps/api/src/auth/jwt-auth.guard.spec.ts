@@ -63,6 +63,22 @@ describe('JwtAuthGuard', () => {
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
+  it('rejects a token signed with another secret', async () => {
+    const otherJwt = new JwtService({ secret: 'another-secret-at-least-32-chars!!' });
+    const forged = await otherJwt.signAsync({ sub: userId });
+    await expect(
+      guard.canActivate(contextFor('privateRoute', `Bearer ${forged}`).context),
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('rejects an expired token', async () => {
+    // Signed with the right secret, but it expired one second before it was issued.
+    const expired = await jwt.signAsync({ sub: userId }, { expiresIn: -1 });
+    await expect(
+      guard.canActivate(contextFor('privateRoute', `Bearer ${expired}`).context),
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
   it('rejects a valid token whose account was deleted', async () => {
     const token = await jwt.signAsync({ sub: userId });
     await users.delete(userId);

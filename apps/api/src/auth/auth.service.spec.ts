@@ -1,5 +1,6 @@
 import { loginBodySchema, signupBodySchema } from '@forge/contracts';
 import { JwtService } from '@nestjs/jwt';
+import bcrypt from 'bcryptjs';
 import { InMemoryUsersRepository } from '../../test/in-memory/in-memory-users.repository';
 import { AuthService } from './auth.service';
 
@@ -42,6 +43,9 @@ describe('AuthService', () => {
     const { user } = await signup('alex@forge.test');
     const session = await login('Alex@Forge.Test');
     expect(session.user.id).toBe(user.id);
+    await expect(jwt.verifyAsync<{ sub: string }>(session.token)).resolves.toMatchObject({
+      sub: user.id,
+    });
   });
 
   it('rejects a wrong password and an unknown email the same way', async () => {
@@ -54,5 +58,25 @@ describe('AuthService', () => {
       code: 'INVALID_CREDENTIALS',
       message: 'Email or password is incorrect.',
     });
+  });
+
+  // An unknown email must cost as much as a known one, or the response time reveals which
+  // accounts exist: the service compares the password against a fixed dummy hash.
+  it('still runs a bcrypt compare for an unknown email', async () => {
+    // The default import is the module object the service reads `compare` from; `import * as`
+    // would hand back a getter-only copy that jest.spyOn cannot redefine.
+    const compareSpy = jest.spyOn(bcrypt, 'compare');
+    try {
+      await expect(login('nobody@forge.test', 'some password')).rejects.toMatchObject({
+        code: 'INVALID_CREDENTIALS',
+      });
+      expect(compareSpy).toHaveBeenCalledTimes(1);
+      expect(compareSpy).toHaveBeenCalledWith(
+        'some password',
+        expect.stringMatching(/^\$2[aby]\$10\$.{53}$/),
+      );
+    } finally {
+      compareSpy.mockRestore();
+    }
   });
 });
