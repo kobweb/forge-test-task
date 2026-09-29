@@ -10,3 +10,6 @@
 - Session hydration uses `useSyncExternalStore` · the React Compiler lint rejects setState inside an effect · none
 - A 401 signs out only while the token it carried is still the current one · concurrent requests with an expired token, or a late answer after deleting the account, would otherwise stack "session ended" toasts or sign out the next user · none
 - The splash waits only for the first GET /me; a retry keeps the error screen up with "Try again" disabled · after the splash hides, rendering null showed a blank window for the whole retry · none
+- Form fields never read `field.ref`; the email → password focus hand-off uses a `useRef` passed as `ref` · the React Compiler lint (`react-hooks/refs`) flags reading the controller's field object · react-hook-form can't focus the first invalid field by itself
+- Form layouts use `KeyboardAwareScrollView` (`bottomOffset={24}`) from react-native-keyboard-controller (D20) · the focused field stays visible on every screen size · none
+- Icon glyph sizes are numeric props, but icon colours always come from className tokens (`withUniwind(Ionicons)`) · Ionicons only accepts a numeric `size`, like HeroUI's own `iconProps` · none
