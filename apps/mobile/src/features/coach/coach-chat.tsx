@@ -28,7 +28,8 @@ export function CoachChat() {
     send.mutate(trimmed, {
       onError: () => {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        setDraft(trimmed);
+        // Restore the failed text unless the user has already typed something new meanwhile.
+        setDraft((current) => (current.trim() ? current : trimmed));
         setSendError('Message not sent. Check your connection and try again.');
       },
     });
@@ -43,6 +44,7 @@ export function CoachChat() {
         body="Check your connection and try again."
         actionLabel="Try again"
         onAction={() => void history.refetch()}
+        isActionPending={history.isFetching}
       />
     );
   }
@@ -52,7 +54,7 @@ export function CoachChat() {
 
   return (
     <View className="flex-1 bg-background pt-safe">
-      <View className="gap-0.5 px-5 pb-3 pt-2">
+      <View className="gap-0.5 border-b border-separator px-5 pb-3 pt-2">
         <Typography.Heading type="h4">Coach</Typography.Heading>
         <Typography type="body-sm" color="muted">
           Knows your goals and where you are in the plan.
@@ -111,7 +113,13 @@ function EmptyConversation({ name, onPick }: { name: string; onPick: (prompt: st
       </View>
       <View className="flex-row flex-wrap justify-center gap-2">
         {SUGGESTED_PROMPTS.map((prompt) => (
-          <Chip key={prompt} variant="secondary" color="default" onPress={() => onPick(prompt)}>
+          <Chip
+            key={prompt}
+            variant="secondary"
+            color="default"
+            accessibilityRole="button"
+            onPress={() => onPick(prompt)}
+          >
             {prompt}
           </Chip>
         ))}

@@ -14,6 +14,7 @@ export default function CoachScreen() {
         body="Check your connection and try again."
         actionLabel="Try again"
         onAction={() => void entitlement.refetch()}
+        isActionPending={entitlement.isFetching}
       />
     );
   }

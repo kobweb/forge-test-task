@@ -30,7 +30,7 @@ function Dot({ delay }: { delay: number }) {
 /** "Coach is typing" while the reply is on its way (600–1200 ms). */
 export function TypingIndicator() {
   return (
-    <View className="flex-row justify-start pr-12" accessibilityLabel="Coach is typing">
+    <View className="flex-row justify-start pr-12" accessible accessibilityLabel="Coach is typing">
       <View className="flex-row items-center gap-1.5 rounded-3xl bg-surface px-4 py-4">
         <Dot delay={0} />
         <Dot delay={160} />
