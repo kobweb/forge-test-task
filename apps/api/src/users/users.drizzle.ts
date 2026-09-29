@@ -40,6 +40,15 @@ export class DrizzleUsersRepository implements UsersRepository {
   async update(id: string, changes: UserChanges): Promise<UserRecord | null> {
     // One transaction, so a reader never sees a half-replaced goals set.
     return this.db.transaction(async (tx) => {
+      // Lock the row first: concurrent PATCHes serialise here, so replacing the goals is
+      // last-write-wins instead of colliding on the (user_id, goal) key. A vanished user
+      // returns null, which the service answers with 401.
+      const [locked] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, id))
+        .for('update');
+      if (!locked) return null;
       const { goals, ...columns } = changes;
       if (Object.keys(columns).length > 0) {
         await tx.update(users).set(columns).where(eq(users.id, id));

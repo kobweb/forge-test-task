@@ -1,6 +1,14 @@
-import type { AuthResponse, User } from '@forge/contracts';
+import { GOALS, type AuthResponse, type Goal, type User } from '@forge/contracts';
 import request from 'supertest';
-import { bearer, createApp, PASSWORD, signUp, uniqueEmail, type TestApp } from './e2e-helpers';
+import {
+  bearer,
+  createApp,
+  onboard,
+  PASSWORD,
+  signUp,
+  uniqueEmail,
+  type TestApp,
+} from './e2e-helpers';
 
 describe('Auth and profile (e2e)', () => {
   let app: TestApp;
@@ -72,6 +80,33 @@ describe('Auth and profile (e2e)', () => {
       .send({ goals: ['build_habit'] })
       .expect(200);
     expect((replaced.body as User).goals).toEqual(['build_habit']);
+  });
+
+  it('serialises concurrent goal edits instead of failing', async () => {
+    const { token } = await signUp(app);
+    await onboard(app, token);
+    // Goals-only bodies touch no users column, so nothing but the row lock orders them.
+    const sent: Goal[][] = [
+      ['build_habit'],
+      ['move_daily', 'get_stronger'],
+      ['get_stronger'],
+      ['build_habit', 'move_daily'],
+      ['move_daily'],
+      ['get_stronger', 'build_habit', 'move_daily'],
+      ['build_habit', 'get_stronger'],
+      ['move_daily', 'build_habit', 'move_daily'],
+    ];
+    const responses = await Promise.all(
+      sent.map((goals) =>
+        request(app.getHttpServer()).patch('/me').set(bearer(token)).send({ goals }),
+      ),
+    );
+    expect(responses.map((response) => response.status)).toEqual(Array<number>(8).fill(200));
+
+    // Last write wins: the stored set is one of the eight, deduped and in GOALS order.
+    const me = await request(app.getHttpServer()).get('/me').set(bearer(token)).expect(200);
+    const normalised = sent.map((goals) => GOALS.filter((goal) => goals.includes(goal)));
+    expect(normalised).toContainEqual((me.body as User).goals);
   });
 
   it('ignores fields it does not own, such as email', async () => {
