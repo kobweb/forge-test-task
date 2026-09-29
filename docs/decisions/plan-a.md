@@ -9,3 +9,4 @@
 - The dummy-compare test spies on bcryptjs through its default import · its CJS build exports its `default` object, so `import * as` yields a getter-only copy that `jest.spyOn` cannot redefine · none: a packaging change makes the test throw, not pass vacuously
 - Local checks use `127.0.0.1:3001`, and the git-ignored `apps/mobile/.env` points there too · on this machine an unrelated server holds `[::1]:3001` and `localhost` resolves to ::1 first, while Nest binds 0.0.0.0 · none: the `.env.example` files keep `localhost:3000` for a clean machine
 - The billing port is `find` / `upsert(userId, purchase)`; "one trial per account" lives in `BillingService` · keeps the adapter dumb and the rule unit-tested · none
+- Coach-reply tests pin lowercasing, consistency-over-next precedence and the short-on-time session name · a mutation pass showed the brief's 22 cases survive all three regressions · none

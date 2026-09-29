@@ -27,9 +27,11 @@ describe('goalsPhrase', () => {
 describe('detectIntent', () => {
   it.each([
     ["I'm sore after my session", 'recovery'],
+    ['Sore legs', 'recovery'], // matching ignores case
     ['How should I warm up for my next session?', 'warmUp'],
     ['I only have 15 minutes today', 'shortOnTime'],
     ['How do I stay consistent?', 'consistency'],
+    ['I keep skipping my session', 'consistency'], // "session" matches next too: first match wins
     ["What's my next session?", 'next'],
     ['Hello!', 'fallback'],
   ])('%s → %s', (message, intent) => {
@@ -70,6 +72,10 @@ describe('composeCoachReply', () => {
     const reply = composeCoachReply(done, "What's my next session?");
     expect(reply).toContain('the plan is done. Restart it from the Plan tab');
     expect(reply).toContain("You've completed all 3 sessions.");
+  });
+
+  it('sends a short-on-time user to the next session mid-plan', () => {
+    expect(composeCoachReply(context(), 'I am busy')).toContain('main set of Build');
   });
 
   it('sends a short-on-time user to Foundation when the plan is complete', () => {
