@@ -13,3 +13,4 @@
 - The coach builds its context through `UsersService` and `PlanService`, not their repositories · one mapping from database to domain, shared with the endpoints · two extra queries per message
 - Coach intent matching is plain substring matching, as spec §9.2 defines it ("restart" matches "rest") · deterministic and explainable · an occasional odd intent from a fake model
 - Coach-service tests assert a free send stores nothing and that progress counts reach the reply · the brief's six tests passed with the message stored before the Plus check or with the counts unmapped · none
+- `createApp()` listens on `127.0.0.1` (port 0) itself instead of leaving that to supertest, and `app.e2e-spec.ts` now boots through it · supertest binds a wildcard port per request, and on macOS another app's `127.0.0.1:<same port>` listener answers instead (an editor's two local servers gave 9 stray 404s in 40,000 requests, and one red e2e run in twelve) · none: one socket per suite
