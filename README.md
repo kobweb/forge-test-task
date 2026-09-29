@@ -50,6 +50,8 @@ pnpm test        # contracts smoke test + API unit tests (in-memory adapters, no
 pnpm test:e2e    # API end-to-end against the docker-compose Postgres (forge_test)
 ```
 
+API details (endpoints, env vars, structure): [apps/api/README.md](apps/api/README.md).
+
 ## Architecture
 
 - `packages/contracts` — the only shared code: domain types, zod schemas (with the user-facing
