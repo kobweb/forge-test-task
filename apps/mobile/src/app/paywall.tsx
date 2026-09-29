@@ -1,7 +1,104 @@
-import { ScreenState } from '@/components/screen-state';
+import { PRODUCT_IDS, type ProductId } from '@forge/contracts';
+import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
+import { Chip, CloseButton, cn, LinkButton, RadioGroup, Typography, useToast } from 'heroui-native';
+import { useState } from 'react';
+import { Platform, ScrollView, View } from 'react-native';
+import { FormAlert } from '@/components/form-alert';
+import { Icon } from '@/components/icon';
+import { SubmitButton } from '@/components/submit-button';
+import { COACH_BENEFITS } from '@/content/labels';
+import { usePurchase, useRestorePurchases } from '@/features/billing/api';
+import { ProductOption } from '@/features/billing/product-option';
+import { PRODUCTS } from '@/features/billing/products';
 
 export default function PaywallScreen() {
+  const [productId, setProductId] = useState<ProductId>('forge_plus_yearly');
+  const purchase = usePurchase();
+  const restore = useRestorePurchases();
+  const { toast } = useToast();
+  const product = PRODUCTS.find((candidate) => candidate.id === productId) ?? PRODUCTS[0];
+  const error = purchase.error ?? restore.error;
+
+  const selectProduct = (value: string) => {
+    const id = PRODUCT_IDS.find((candidate) => candidate === value);
+    if (!id) return;
+    void Haptics.selectionAsync();
+    setProductId(id);
+  };
+
+  const startTrial = () =>
+    purchase.mutate(productId, {
+      onSuccess: () => {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        toast.show({ variant: 'success', label: 'Welcome to Forge Plus' });
+        router.back();
+      },
+    });
+
+  const restorePurchases = () =>
+    restore.mutate(undefined, {
+      onSuccess: (entitlement) => {
+        if (entitlement.tier === 'plus') {
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          toast.show({ variant: 'success', label: 'Purchases restored' });
+          router.back();
+        } else {
+          toast.show({ label: 'No purchases to restore on this account.' });
+        }
+      },
+    });
+
+  // Uniwind applies `android:`-scoped classes on iOS too (1.12.0), so the platform check is done
+  // at runtime: Android's edge-to-edge modal needs the status-bar padding, the iOS sheet does not.
   return (
-    <ScreenState icon="construct-outline" title="Forge Plus" body="Built in Plan B, Task 6." />
+    <View className={cn('flex-1 bg-background', Platform.OS === 'android' && 'pt-safe')}>
+      <ScrollView contentContainerClassName="gap-6 px-6 pb-6 pt-4">
+        <View className="flex-row justify-end">
+          <CloseButton onPress={() => router.back()} accessibilityLabel="Close" />
+        </View>
+        <View className="gap-2">
+          <Typography.Heading type="h2">Forge Plus</Typography.Heading>
+          <Typography type="body" color="muted">
+            Your coach, on call for every session.
+          </Typography>
+        </View>
+        <View className="gap-3">
+          {COACH_BENEFITS.map((benefit) => (
+            <View key={benefit} className="flex-row items-center gap-3">
+              <Icon name="checkmark-circle" size={20} className="text-accent" />
+              <Typography type="body-sm" className="flex-1">
+                {benefit}
+              </Typography>
+            </View>
+          ))}
+        </View>
+        <RadioGroup value={productId} onValueChange={selectProduct} className="gap-3">
+          {PRODUCTS.map((option) => (
+            <ProductOption key={option.id} product={option} isSelected={option.id === productId} />
+          ))}
+        </RadioGroup>
+      </ScrollView>
+
+      {/* The alert lives in the footer, next to the action it belongs to: at the end of the
+          scroll content it sat under the footer on an iPhone 16 and needed a scroll to read. */}
+      <View className="gap-3 border-t border-separator px-6 pb-safe-offset-3 pt-4">
+        {error ? <FormAlert message={error.message} /> : null}
+        <SubmitButton
+          label="Start 7-day trial"
+          isPending={purchase.isPending}
+          onPress={startTrial}
+        />
+        <Typography type="body-xs" color="muted" align="center">
+          {`7 days free, then ${product.price}. Cancel anytime.`}
+        </Typography>
+        <LinkButton onPress={restorePurchases} isDisabled={restore.isPending || purchase.isPending}>
+          Restore purchases
+        </LinkButton>
+        <Chip size="sm" variant="soft" color="default" className="self-center">
+          Sandbox · no real charge
+        </Chip>
+      </View>
+    </View>
   );
 }
