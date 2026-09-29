@@ -13,6 +13,10 @@ describe('UsersService', () => {
     userId = (await repository.create({ email: 'alex@forge.test', passwordHash: 'hash' })).id;
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   // The controller runs every body through this schema first; the tests do the same.
   const body = (input: unknown) => updateMeBodySchema.parse(input);
 
@@ -37,11 +41,17 @@ describe('UsersService', () => {
   });
 
   it('is not onboarded while any of the three is missing', async () => {
-    const withoutConsent = await service.updateMe(
-      userId,
-      body({ displayName: 'Alex', goals: ['move_daily'] }),
-    );
-    expect(withoutConsent.onboarded).toBe(false);
+    // Each case sets two of the three, on its own user, so each missing piece is checked alone.
+    const incomplete = [
+      { displayName: 'Alex', goals: ['move_daily'] }, // no consent
+      { goals: ['move_daily'], acceptConsent: true }, // no name
+      { displayName: 'Alex', acceptConsent: true }, // no goals
+    ];
+    for (const [index, input] of incomplete.entries()) {
+      const email = `case-${index}@forge.test`;
+      const { id } = await repository.create({ email, passwordHash: 'hash' });
+      await expect(service.updateMe(id, body(input))).resolves.toMatchObject({ onboarded: false });
+    }
   });
 
   it('replaces the whole goals set and returns it in GOALS order', async () => {
@@ -57,8 +67,12 @@ describe('UsersService', () => {
   });
 
   it('sets the consent timestamp once and keeps the first date', async () => {
+    // A pinned clock: two real calls in the same millisecond would look alike either way.
+    jest.useFakeTimers({ now: new Date('2026-01-01T10:00:00.000Z') });
     const first = await service.updateMe(userId, body({ acceptConsent: true }));
+    jest.setSystemTime(new Date('2026-01-02T10:00:00.000Z'));
     const second = await service.updateMe(userId, body({ acceptConsent: true }));
+    expect(first.consentAcceptedAt).toBe('2026-01-01T10:00:00.000Z');
     expect(second.consentAcceptedAt).toBe(first.consentAcceptedAt);
   });
 

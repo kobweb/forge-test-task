@@ -12,7 +12,9 @@ export class InMemoryUsersRepository implements UsersRepository {
 
   create(user: NewUser): Promise<UserRecord> {
     if ([...this.users.values()].some((existing) => existing.email === user.email)) {
-      throw new AppError('EMAIL_TAKEN', 'An account with this email already exists.');
+      return Promise.reject(
+        new AppError('EMAIL_TAKEN', 'An account with this email already exists.'),
+      );
     }
     const record: UserRecord = {
       id: randomUUID(),
