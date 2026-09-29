@@ -31,6 +31,7 @@ export function PlanHeader({ displayName, goals, completedCount, totalCount }: P
           {`${completedCount} of ${totalCount} complete`}
         </Typography>
         <View
+          accessible
           className="flex-row gap-1.5"
           accessibilityRole="progressbar"
           accessibilityValue={{ min: 0, max: totalCount, now: completedCount }}

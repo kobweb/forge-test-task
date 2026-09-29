@@ -28,7 +28,12 @@ export function TimelineItem({
 
   return (
     <View className="flex-row gap-4">
-      <View className="w-8 items-center">
+      {/* The card's label already carries the status, so the rail is decoration to VoiceOver. */}
+      <View
+        className="w-8 items-center"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         <View className={cn('w-0.5 flex-1', isFirst ? 'bg-transparent' : 'bg-separator')}>
           {!isFirst && previousCompleted ? (
             <Animated.View

@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router, useIsFocused } from 'expo-router';
 import { useThemeColor, useToast } from 'heroui-native';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenState } from '@/components/screen-state';
@@ -21,6 +21,8 @@ export default function PlanScreen() {
   const { toast } = useToast();
   const refreshTint = useThemeColor('muted');
   const insets = useSafeAreaInsets();
+  // Only a pull shows the spinner; background refetches (mount, foreground) stay silent.
+  const [isPulling, setIsPulling] = useState(false);
   const isFocused = useIsFocused();
   const pending = usePlanCelebration((state) => state.pending);
   // A pending celebration plays while this screen is on screen, then is consumed. Children
@@ -44,11 +46,21 @@ export default function PlanScreen() {
         body="Check your connection and try again."
         actionLabel="Try again"
         onAction={() => void plan.refetch()}
+        isActionPending={plan.isFetching}
       />
     );
   }
 
   const { sessions, completedCount, totalCount, nextSessionId } = plan.data;
+
+  const refresh = async () => {
+    setIsPulling(true);
+    try {
+      await plan.refetch();
+    } finally {
+      setIsPulling(false);
+    }
+  };
 
   const restart = () =>
     resetPlan.mutate(undefined, {
@@ -69,8 +81,8 @@ export default function PlanScreen() {
         refreshControl={
           // The scroll view runs under the status bar, so the spinner is pushed below it.
           <RefreshControl
-            refreshing={plan.isRefetching}
-            onRefresh={() => void plan.refetch()}
+            refreshing={isPulling}
+            onRefresh={() => void refresh()}
             tintColor={refreshTint}
             progressViewOffset={insets.top}
           />

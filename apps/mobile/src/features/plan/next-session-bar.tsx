@@ -28,7 +28,9 @@ export function NextSessionBar({ plan, onStart, onRestart, isRestarting }: NextS
           </Typography>
         </View>
         {next ? (
-          <Button onPress={onStart}>Start</Button>
+          <Button onPress={onStart} accessibilityLabel={`Start ${next.title}`}>
+            Start
+          </Button>
         ) : (
           <View className="min-w-32">
             <SubmitButton label="Restart plan" isPending={isRestarting} onPress={onRestart} />
