@@ -12,3 +12,4 @@
 - Coach-reply tests pin lowercasing, consistency-over-next precedence and the short-on-time session name · a mutation pass showed the brief's 22 cases survive all three regressions · none
 - The coach builds its context through `UsersService` and `PlanService`, not their repositories · one mapping from database to domain, shared with the endpoints · two extra queries per message
 - Coach intent matching is plain substring matching, as spec §9.2 defines it ("restart" matches "rest") · deterministic and explainable · an occasional odd intent from a fake model
+- Coach-service tests assert a free send stores nothing and that progress counts reach the reply · the brief's six tests passed with the message stored before the Plus check or with the counts unmapped · none

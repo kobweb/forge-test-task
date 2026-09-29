@@ -40,6 +40,7 @@ describe('CoachService', () => {
   it('refuses a free user on both history and send', async () => {
     await expect(service.history(alex)).rejects.toMatchObject({ code: 'PLUS_REQUIRED' });
     await expect(service.send(alex, 'Hi')).rejects.toMatchObject({ code: 'PLUS_REQUIRED' });
+    expect(await messages.listRecent(alex, 10)).toEqual([]); // nothing stored on refusal
   });
 
   describe('with Plus', () => {
@@ -65,6 +66,7 @@ describe('CoachService', () => {
       expect(reply.text).toContain('Alex');
       expect(reply.text).toContain('building a habit that sticks');
       expect(reply.text).toContain('your next session is Build: 35 minutes across 4 blocks');
+      expect(reply.text).toContain("You've completed 1 of 3 sessions; Build is up next.");
     });
 
     it('returns the history oldest first, with string ids and ISO timestamps', async () => {
