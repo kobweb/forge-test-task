@@ -25,6 +25,7 @@ export function SubmitButton({
       variant={variant}
       isDisabled={isDisabled}
       onPress={isPending ? undefined : onPress}
+      accessibilityLabel={label}
       accessibilityState={{ busy: isPending, disabled: isDisabled }}
     >
       {isPending ? (
