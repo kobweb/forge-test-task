@@ -9,6 +9,7 @@ import { useMe } from '@/features/me/api';
 import { AnalyticsRow, NotificationsRow, TrackingRow } from '@/features/privacy/privacy-rows';
 import { DeleteAccountDialog } from '@/features/settings/delete-account-dialog';
 import { SettingsSkeleton } from '@/features/settings/settings-skeleton';
+import { analytics } from '@/lib/analytics';
 import { APP_VERSION } from '@/lib/config';
 import { formatDate, initials } from '@/lib/format';
 import { signOut } from '@/lib/session';
@@ -103,7 +104,14 @@ export default function SettingsScreen() {
 
         <Section title="Account">
           <ListGroup>
-            <ListGroup.Item accessibilityRole="button" onPress={() => void signOut()}>
+            <ListGroup.Item
+              accessibilityRole="button"
+              onPress={() => {
+                // Tracked before the sign-out resets the consent.
+                analytics.track('logged_out');
+                void signOut();
+              }}
+            >
               <ListGroup.ItemContent>
                 <ListGroup.ItemTitle>Log out</ListGroup.ItemTitle>
               </ListGroup.ItemContent>
@@ -151,7 +159,10 @@ function MembershipRow({ entitlement }: { entitlement: ReturnType<typeof useEnti
       );
     }
     return (
-      <ListGroup.Item accessibilityRole="button" onPress={() => router.push('/paywall')}>
+      <ListGroup.Item
+        accessibilityRole="button"
+        onPress={() => router.push({ pathname: '/paywall', params: { source: 'settings' } })}
+      >
         <ListGroup.ItemContent>
           <ListGroup.ItemTitle>Free</ListGroup.ItemTitle>
           <ListGroup.ItemDescription>See Forge Plus</ListGroup.ItemDescription>

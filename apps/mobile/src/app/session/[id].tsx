@@ -2,7 +2,7 @@ import type { SessionBlock, SessionId, SessionStatus } from '@forge/contracts';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Chip, Typography, useToast } from 'heroui-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { ScrollView, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -15,6 +15,7 @@ import { ScreenState } from '@/components/screen-state';
 import { SubmitButton } from '@/components/submit-button';
 import { useCompleteSession, usePlan } from '@/features/plan/api';
 import { CheckableBlockRow, StaticBlockRow } from '@/features/session/block-row';
+import { analytics } from '@/lib/analytics';
 import { usePlanCelebration } from '@/stores/celebration-store';
 import { NO_TICKS, useChecklist } from '@/stores/checklist-store';
 
@@ -28,6 +29,18 @@ export default function SessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const plan = usePlan();
   const session = plan.data?.sessions.find((candidate) => candidate.id === id);
+  const sessionId = session?.id;
+
+  // Once per session shown, with the status it had when it was opened (completing it here
+  // changes the status, and that is `session_completed`, not a second open).
+  const trackOpened = useEffectEvent(() => {
+    if (session) {
+      analytics.track('session_opened', { sessionId: session.id, status: session.status });
+    }
+  });
+  useEffect(() => {
+    if (sessionId) trackOpened();
+  }, [sessionId]);
 
   if (!session || !plan.data) {
     return (

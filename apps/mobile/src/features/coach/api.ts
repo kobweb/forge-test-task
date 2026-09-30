@@ -6,6 +6,7 @@ import {
   type SendCoachMessageResponse,
 } from '@forge/contracts';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { analytics } from '@/lib/analytics';
 import { apiRequest, type ApiError } from '@/lib/api';
 import { queryClient, queryKeys } from '@/lib/query-client';
 
@@ -35,8 +36,9 @@ export function useSendCoachMessage() {
       queryClient.setQueryData<CoachMessage[]>(queryKeys.coachMessages, [...previous, pending]);
       return { previous };
     },
-    onError: (_error, _text, context) => {
+    onError: (error, _text, context) => {
       if (context) queryClient.setQueryData(queryKeys.coachMessages, context.previous);
+      analytics.track('coach_send_failed', { code: error.code });
     },
     onSuccess: ({ message, reply }, _text, context) => {
       queryClient.setQueryData<CoachMessage[]>(queryKeys.coachMessages, [
@@ -44,6 +46,7 @@ export function useSendCoachMessage() {
         message,
         reply,
       ]);
+      analytics.track('coach_reply_received');
     },
   });
 }

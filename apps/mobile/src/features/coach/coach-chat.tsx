@@ -8,6 +8,7 @@ import { Icon } from '@/components/icon';
 import { ScreenState } from '@/components/screen-state';
 import { SUGGESTED_PROMPTS } from '@/content/labels';
 import { useMe } from '@/features/me/api';
+import { analytics } from '@/lib/analytics';
 import { useCoachMessages, useSendCoachMessage } from './api';
 import { Composer } from './composer';
 import { MessageBubble } from './message-bubble';
@@ -20,9 +21,10 @@ export function CoachChat() {
   const [draft, setDraft] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
 
-  const submit = (text: string) => {
+  const submit = (text: string, source: 'prompt' | 'typed') => {
     const trimmed = text.trim();
     if (!trimmed || send.isPending) return;
+    analytics.track('coach_message_sent', { source });
     setSendError(null);
     setDraft('');
     send.mutate(trimmed, {
@@ -62,7 +64,10 @@ export function CoachChat() {
       </View>
       <KeyboardAvoidingView behavior="padding" className="flex-1">
         {messages.length === 0 ? (
-          <EmptyConversation name={me.data?.displayName ?? 'there'} onPick={submit} />
+          <EmptyConversation
+            name={me.data?.displayName ?? 'there'}
+            onPick={(prompt) => submit(prompt, 'prompt')}
+          />
         ) : (
           <FlatList
             inverted
@@ -83,7 +88,7 @@ export function CoachChat() {
         <Composer
           value={draft}
           onChangeText={setDraft}
-          onSend={() => submit(draft)}
+          onSend={() => submit(draft, 'typed')}
           isSending={send.isPending}
         />
       </KeyboardAvoidingView>

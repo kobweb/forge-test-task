@@ -14,3 +14,6 @@
 - The mobile test script passes `--disable-warning=MODULE_TYPELESS_PACKAGE_JSON` · Node otherwise prints an advisory because the package has no `"type"` field, and `"type": "module"` would break the CommonJS config files · none
 - A Settings permission row asks only while iOS has no answer, and opens the system Settings app afterwards · iOS shows each permission alert once per app · a second tap on a denied permission leaves the app
 - Turning analytics off in Settings is not reported · once it is off nothing is sent, including the fact that it is off · the funnel cannot count opt-outs
+- `useUpdateMe` tells onboarding from a profile edit by `acceptConsent` in the request body · only the onboarding form sends it, and the event must fire at hook level · a future form that sends the consent again would be counted as onboarding
+- `session_opened` uses `useEffectEvent` keyed on the session id · the event needs the status at open time without re-firing when completing the session changes that status · none
+- `coach_message_sent` fires at send time in the screen, the reply and the failure at hook level · the source (prompt or typed) is only known where the message is composed · a send from a screen that unmounts at once would still be counted as sent

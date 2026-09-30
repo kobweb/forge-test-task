@@ -1,9 +1,9 @@
 import { PRODUCT_IDS, type ProductId } from '@forge/contracts';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Chip, CloseButton, cn, LinkButton, RadioGroup, Typography, useToast } from 'heroui-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, ScrollView, View } from 'react-native';
 import { FormAlert } from '@/components/form-alert';
 import { Icon } from '@/components/icon';
@@ -12,8 +12,10 @@ import { COACH_BENEFITS } from '@/content/labels';
 import { usePurchase, useRestorePurchases } from '@/features/billing/api';
 import { ProductOption } from '@/features/billing/product-option';
 import { PRODUCTS } from '@/features/billing/products';
+import { analytics, type PaywallSource } from '@/lib/analytics';
 
 export default function PaywallScreen() {
+  const { source } = useLocalSearchParams<{ source?: string }>();
   const [productId, setProductId] = useState<ProductId>('forge_plus_yearly');
   const purchase = usePurchase();
   const restore = useRestorePurchases();
@@ -21,12 +23,17 @@ export default function PaywallScreen() {
   const product = PRODUCTS.find((candidate) => candidate.id === productId) ?? PRODUCTS[0];
   const error = purchase.error ?? restore.error;
 
+  useEffect(() => {
+    analytics.track('paywall_viewed', { source: toPaywallSource(source) });
+  }, [source]);
+
   const selectProduct = (value: string) => {
     const id = PRODUCT_IDS.find((candidate) => candidate === value);
     // HeroUI reports a tap on the already-selected card too: no change, no haptic.
     if (!id || id === productId) return;
     void Haptics.selectionAsync();
     setProductId(id);
+    analytics.track('product_selected', { productId: id });
   };
 
   // Each action clears the other's stale error first, since the Alert shows whichever is set.
@@ -113,4 +120,9 @@ export default function PaywallScreen() {
       </View>
     </View>
   );
+}
+
+// The in-app entry points say where they are; a typed or shared link does not.
+function toPaywallSource(source: string | undefined): PaywallSource {
+  return source === 'coach_teaser' || source === 'settings' ? source : 'direct';
 }

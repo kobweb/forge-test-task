@@ -1,5 +1,6 @@
 import { planViewSchema, routes, type PlanView, type SessionId } from '@forge/contracts';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { analytics } from '@/lib/analytics';
 import { apiRequest, type ApiError } from '@/lib/api';
 import { queryClient, queryKeys } from '@/lib/query-client';
 import { useChecklist } from '@/stores/checklist-store';
@@ -24,6 +25,8 @@ export function useCompleteSession() {
     onSuccess: (plan, sessionId) => {
       queryClient.setQueryData(queryKeys.plan, plan);
       useChecklist.getState().clear(sessionId);
+      analytics.track('session_completed', { sessionId, completedCount: plan.completedCount });
+      if (plan.nextSessionId === null) analytics.track('plan_completed');
     },
   });
 }
@@ -36,6 +39,7 @@ export function useResetPlan() {
     onSuccess: (plan) => {
       queryClient.setQueryData(queryKeys.plan, plan);
       useChecklist.getState().reset();
+      analytics.track('plan_restarted');
     },
   });
 }

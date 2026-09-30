@@ -1,12 +1,18 @@
 import { router } from 'expo-router';
 import { Typography } from 'heroui-native';
+import { useEffect } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Icon } from '@/components/icon';
 import { SubmitButton } from '@/components/submit-button';
 import { COACH_BENEFITS } from '@/content/labels';
+import { analytics } from '@/lib/analytics';
 
 /** What a free user sees on the Coach tab: what Plus unlocks, and one way in. */
 export function CoachTeaser() {
+  useEffect(() => {
+    analytics.track('coach_teaser_viewed');
+  }, []);
+
   return (
     <ScrollView
       className="flex-1 bg-background"
@@ -36,7 +42,10 @@ export function CoachTeaser() {
           </View>
         ))}
       </View>
-      <SubmitButton label="Unlock Coach" onPress={() => router.push('/paywall')} />
+      <SubmitButton
+        label="Unlock Coach"
+        onPress={() => router.push({ pathname: '/paywall', params: { source: 'coach_teaser' } })}
+      />
     </ScrollView>
   );
 }
