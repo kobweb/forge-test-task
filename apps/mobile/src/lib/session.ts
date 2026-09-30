@@ -1,6 +1,7 @@
 import type { AuthResponse } from '@forge/contracts';
 import { usePlanCelebration } from '@/stores/celebration-store';
 import { useChecklist } from '@/stores/checklist-store';
+import { usePrivacy } from '@/stores/privacy-store';
 import { useSession } from '@/stores/session-store';
 import { setUnauthorizedHandler } from './api';
 import { publishNotice } from './notices';
@@ -29,6 +30,9 @@ export async function signOut(reason?: keyof typeof SIGN_OUT_NOTICES): Promise<v
   // Token first: the route guards leave the signed-in screens before their data disappears.
   useSession.getState().setToken(null);
   await clearUserData();
+  // Privacy choices go with the person. Not on sign-in: the events queued before and during
+  // sign-up must survive until that person answers the analytics step.
+  usePrivacy.getState().reset();
   if (reason) publishNotice(SIGN_OUT_NOTICES[reason]);
 }
 
