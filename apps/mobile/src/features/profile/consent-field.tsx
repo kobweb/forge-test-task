@@ -1,4 +1,4 @@
-import { ControlField, FieldError, Typography } from 'heroui-native';
+import { Checkbox, ControlField, FieldError, Typography } from 'heroui-native';
 import { View } from 'react-native';
 import { useController, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 
@@ -23,7 +23,10 @@ export function ConsentField<TValues extends FieldValues, TOutput>({
         accessibilityState={{ checked: isSelected }}
         className="items-start"
       >
-        <ControlField.Indicator variant="checkbox" />
+        {/* The same box as the goal cards above it, so onboarding shows one checkbox look. */}
+        <ControlField.Indicator>
+          <Checkbox variant="secondary" />
+        </ControlField.Indicator>
         <Typography type="body-sm" className="flex-1">
           I agree that Forge stores my profile, progress and coach messages to personalise my
           training. I can delete all of it in Settings.

@@ -18,7 +18,14 @@ interface FormScreenProps {
 // Helper line + gap + 56 pt submit button below the focused field's caret, plus a 24 pt margin.
 const KEYBOARD_BOTTOM_OFFSET = 144;
 
-/** Scrollable, keyboard-aware form layout: the focused field is never hidden by the keyboard. */
+/**
+ * Scrollable, keyboard-aware form layout: the focused field is never hidden by the keyboard.
+ *
+ * A FormAlert, an inline error or anything else whose appearance moves the focused field must
+ * render inside `children`: the fields container's `onLayout` is what re-runs
+ * `assureFocusedInputVisible()`, and content placed in `footer` or beside the title is not
+ * watched.
+ */
 export function FormScreen({
   title,
   subtitle,

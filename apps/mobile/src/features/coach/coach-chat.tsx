@@ -76,7 +76,7 @@ export function CoachChat() {
           />
         )}
         {sendError ? (
-          <View className="px-5 pb-2">
+          <View className="px-5 pb-3">
             <FormAlert message={sendError} />
           </View>
         ) : null}

@@ -16,7 +16,9 @@ export function NextSessionBar({ plan, onStart, onRestart, isRestarting }: NextS
 
   return (
     <View className="absolute inset-x-0 bottom-0 px-5 pb-3">
-      <Surface className="flex-row items-center gap-4 shadow-overlay">
+      {/* The hairline is the elevation cue in dark, where surface shadows are transparent;
+          in light it hides under the shadow. */}
+      <Surface className="flex-row items-center gap-4 border border-separator shadow-overlay">
         <View className="flex-1 gap-0.5">
           <Typography type="body-xs" color="muted" className="uppercase tracking-wider">
             {next ? 'Next session' : 'Plan complete'}
@@ -33,7 +35,13 @@ export function NextSessionBar({ plan, onStart, onRestart, isRestarting }: NextS
           </Button>
         ) : (
           <View className="min-w-32">
-            <SubmitButton label="Restart plan" isPending={isRestarting} onPress={onRestart} />
+            {/* Same height as "Start" (md), so the bar does not grow when the plan completes. */}
+            <SubmitButton
+              label="Restart plan"
+              size="md"
+              isPending={isRestarting}
+              onPress={onRestart}
+            />
           </View>
         )}
       </Surface>

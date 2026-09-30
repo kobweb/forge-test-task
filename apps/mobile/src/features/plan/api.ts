@@ -2,6 +2,7 @@ import { planViewSchema, routes, type PlanView, type SessionId } from '@forge/co
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, type ApiError } from '@/lib/api';
 import { queryClient, queryKeys } from '@/lib/query-client';
+import { useChecklist } from '@/stores/checklist-store';
 import { useSession } from '@/stores/session-store';
 
 export function usePlan() {
@@ -13,17 +14,28 @@ export function usePlan() {
   });
 }
 
-// The server decides what unlocks; its answer replaces the cached plan.
+// The server decides what unlocks; its answer replaces the cached plan. The checklist ticks are
+// cleared here, at hook level, because TanStack skips a `mutate()` call's own callbacks once the
+// calling screen has unmounted (the user backed out during a slow request), which would leave
+// the completed session pre-ticked for the next run of the plan.
 export function useCompleteSession() {
   return useMutation<PlanView, ApiError, SessionId>({
     mutationFn: (sessionId) => apiRequest('POST', routes.plan.complete(sessionId), planViewSchema),
-    onSuccess: (plan) => queryClient.setQueryData(queryKeys.plan, plan),
+    onSuccess: (plan, sessionId) => {
+      queryClient.setQueryData(queryKeys.plan, plan);
+      useChecklist.getState().clear(sessionId);
+    },
   });
 }
 
+// A restart starts every session from a blank checklist, including one whose completion the
+// client never saw succeed (a timed-out request the server still applied).
 export function useResetPlan() {
   return useMutation<PlanView, ApiError, void>({
     mutationFn: () => apiRequest('POST', routes.plan.reset, planViewSchema),
-    onSuccess: (plan) => queryClient.setQueryData(queryKeys.plan, plan),
+    onSuccess: (plan) => {
+      queryClient.setQueryData(queryKeys.plan, plan);
+      useChecklist.getState().reset();
+    },
   });
 }

@@ -12,6 +12,7 @@ import { PlanCompleteCard } from '@/features/plan/plan-complete-card';
 import { PlanHeader } from '@/features/plan/plan-header';
 import { PlanSkeleton } from '@/features/plan/plan-skeleton';
 import { TimelineItem } from '@/features/plan/timeline-item';
+import { REVEAL_DELAY_MS } from '@/features/plan/use-celebration-motion';
 import { usePlanCelebration } from '@/stores/celebration-store';
 
 export default function PlanScreen() {
@@ -29,12 +30,20 @@ export default function PlanScreen() {
   // start their animation on this render; the effect below fires the haptic and clears it.
   const celebration = isFocused && plan.data ? pending : null;
 
+  // The motion waits REVEAL_DELAY_MS for the pop transition, so the haptic waits with it: the
+  // impact lands on the spring, and the plan-complete Success sits apart from the one the
+  // session screen fired. The celebration is consumed with the haptic (consuming it earlier
+  // would re-run this effect and cancel the timer); a screen left before then replays it next
+  // time, and nothing visible has happened yet by then.
   useEffect(() => {
     if (!celebration) return;
-    void (celebration.kind === 'unlock'
-      ? Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-      : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
-    usePlanCelebration.getState().consume();
+    const timer = setTimeout(() => {
+      void (celebration.kind === 'unlock'
+        ? Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
+      usePlanCelebration.getState().consume();
+    }, REVEAL_DELAY_MS);
+    return () => clearTimeout(timer);
   }, [celebration]);
 
   if (plan.isPending) return <PlanSkeleton />;

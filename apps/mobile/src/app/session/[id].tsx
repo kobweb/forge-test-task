@@ -152,7 +152,6 @@ function CompleteBar({
   const plan = usePlan();
   const { toast } = useToast();
   const tickedCount = useChecklist((state) => (state.ticked[sessionId] ?? NO_TICKS).length);
-  const clear = useChecklist((state) => state.clear);
   const allTicked = tickedCount === blockCount;
 
   // A small pulse the moment the last block is ticked and the button becomes available.
@@ -176,11 +175,11 @@ function CompleteBar({
       ? `Finishing unlocks ${nextTitle}.`
       : 'Finishing completes your plan.';
 
+  // The ticks are cleared by the mutation hook itself (it outlives this screen).
   const onComplete = () =>
     complete.mutate(sessionId, {
       onSuccess: (updated) => {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        clear(sessionId);
         usePlanCelebration
           .getState()
           .celebrate(
