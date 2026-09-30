@@ -29,9 +29,18 @@
           "imageWidth": 120,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
-          "dark": { "backgroundColor": "#000000" }
+          "dark": {
+            "backgroundColor": "#000000"
+          }
         }
-      ]
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Forge uses this to measure which features help you train, across apps and websites."
+        }
+      ],
+      "expo-notifications"
     ]
   }
 }
