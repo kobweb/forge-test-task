@@ -51,7 +51,8 @@ pnpm test:e2e    # API end-to-end against the docker-compose Postgres (forge_tes
 ```
 
 Mobile: no automated tests by design (TDD exemption). Each screen was checked in the iOS
-Simulator; see the screenshots.
+Simulator (iPhone 16, light and dark), and sign-in, onboarding and the Plan also on an Android
+emulator; see the screenshots.
 
 API details (endpoints, env vars, structure): [apps/api/README.md](apps/api/README.md).
 Mobile details (running it, structure): [apps/mobile/README.md](apps/mobile/README.md).
@@ -64,9 +65,9 @@ All from an iPhone 16 simulator; the full set is in [`docs/screenshots/`](docs/s
 | --- | --- |
 | **Sign in**<br><img src="docs/screenshots/sign-in.png" width="300" alt="Sign in"> | **Onboarding**<br><img src="docs/screenshots/onboarding.png" width="300" alt="Onboarding"> |
 | **Plan**<br><img src="docs/screenshots/plan.png" width="300" alt="Plan"> | **Session, ready to complete**<br><img src="docs/screenshots/session-ready.png" width="300" alt="Session ready"> |
-| **Coach chat**<br><img src="docs/screenshots/coach-chat.png" width="300" alt="Coach chat"> | **Paywall**<br><img src="docs/screenshots/paywall.png" width="300" alt="Paywall"> |
-| **Settings**<br><img src="docs/screenshots/settings.png" width="300" alt="Settings"> | **Plan (dark)**<br><img src="docs/screenshots/plan-dark.png" width="300" alt="Plan, dark"> |
-| **Coach chat (dark)**<br><img src="docs/screenshots/coach-chat-dark.png" width="300" alt="Coach chat, dark"> | |
+| **Plan complete**<br><img src="docs/screenshots/plan-complete.png" width="300" alt="Plan complete"> | **Coach chat**<br><img src="docs/screenshots/coach-chat.png" width="300" alt="Coach chat"> |
+| **Paywall**<br><img src="docs/screenshots/paywall.png" width="300" alt="Paywall"> | **Settings**<br><img src="docs/screenshots/settings.png" width="300" alt="Settings"> |
+| **Plan (dark)**<br><img src="docs/screenshots/plan-dark.png" width="300" alt="Plan, dark"> | **Coach chat (dark)**<br><img src="docs/screenshots/coach-chat-dark.png" width="300" alt="Coach chat, dark"> |
 
 ## Architecture
 
@@ -81,13 +82,19 @@ All from an iPhone 16 simulator; the full set is in [`docs/screenshots/`](docs/s
 
 ## What I'd change with one more hour
 
-- In dark mode the sticky "Next session" bar sits on the last timeline card with only a
-  hairline between two identically coloured surfaces, because surface shadows are transparent
-  there. A slightly lighter bar tone or a stronger border would give it back the elevation it
-  has in light mode.
-- The bar's "Restart plan" button is taller than its "Start" button (a 56 pt submit button
-  next to the default 48 pt one), so the bar grows when the plan completes. One shared button
-  size would keep the bar's shape steady between the two states.
 - On the headerless tab screens (Plan, Settings) the content scrolls straight under the
   status-bar clock. A fading top edge or a collapsing title would keep the clock legible
   while scrolling.
+- Toasts appear at the top and, for the few seconds they show, sit over the controls there:
+  the session screen's back button and the paywall's close button. Placing them below the header
+  on those screens would keep navigation within reach while the message shows.
+- Tapping "Start training" on an empty onboarding form grows every field with its error and
+  pushes the button below the fold. Scrolling to the first invalid field on submit would keep
+  the person looking at what needs fixing instead of at a half-hidden button.
+
+## Supabase instead of Docker (optional)
+
+Set `DATABASE_URL` in `apps/api/.env` to your Supabase connection string, then run
+`pnpm db:push`. On the transaction pooler (port 6543) the API switches prepared statements off
+by itself (postgres.js `prepare: false`); direct and session-pooler connections work as they
+are. The e2e suite still runs against the local `forge_test` database (`TEST_DATABASE_URL`).
