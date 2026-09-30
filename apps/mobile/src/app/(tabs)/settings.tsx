@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { Avatar, ListGroup, Separator, SkeletonGroup, Typography } from 'heroui-native';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { Icon } from '@/components/icon';
 import { GOAL_LABELS } from '@/content/labels';
 import { useEntitlement } from '@/features/billing/api';
 import { useMe } from '@/features/me/api';
+import { AnalyticsRow, NotificationsRow, TrackingRow } from '@/features/privacy/privacy-rows';
 import { DeleteAccountDialog } from '@/features/settings/delete-account-dialog';
 import { SettingsSkeleton } from '@/features/settings/settings-skeleton';
 import { APP_VERSION } from '@/lib/config';
@@ -81,6 +82,16 @@ export default function SettingsScreen() {
                 <Icon name="shield-checkmark-outline" size={20} className="text-muted" />
               </ListGroup.ItemSuffix>
             </ListGroup.Item>
+            <Separator className="mx-4" />
+            <NotificationsRow />
+            {Platform.OS === 'ios' ? (
+              <>
+                <Separator className="mx-4" />
+                <TrackingRow />
+              </>
+            ) : null}
+            <Separator className="mx-4" />
+            <AnalyticsRow />
           </ListGroup>
         </Section>
 

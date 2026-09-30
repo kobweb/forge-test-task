@@ -12,3 +12,5 @@
 - "Not now" on notifications does not call the system request · iOS asks once, so the real prompt is kept for the Settings row · the status stays "Not set" until then
 - `expo-notifications` is loaded lazily inside `src/lib/permissions.ts` · reading its source shows it throws while loading in Expo Go on Android; a static import would crash the app there · this path was not run on Android (iOS only, by the user's call on 2026-09-30)
 - The mobile test script passes `--disable-warning=MODULE_TYPELESS_PACKAGE_JSON` · Node otherwise prints an advisory because the package has no `"type"` field, and `"type": "module"` would break the CommonJS config files · none
+- A Settings permission row asks only while iOS has no answer, and opens the system Settings app afterwards · iOS shows each permission alert once per app · a second tap on a denied permission leaves the app
+- Turning analytics off in Settings is not reported · once it is off nothing is sent, including the fact that it is off · the funnel cannot count opt-outs
