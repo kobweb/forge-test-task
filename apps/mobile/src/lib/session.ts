@@ -29,10 +29,11 @@ export async function signIn({ token, user }: AuthResponse): Promise<void> {
 export async function signOut(reason?: keyof typeof SIGN_OUT_NOTICES): Promise<void> {
   // Token first: the route guards leave the signed-in screens before their data disappears.
   useSession.getState().setToken(null);
-  await clearUserData();
-  // Privacy choices go with the person. Not on sign-in: the events queued before and during
-  // sign-up must survive until that person answers the analytics step.
+  // Privacy choices go with the person, and at once: the sign-in screen that the guard shows
+  // next must not be reported under the old consent. Not on sign-in: the events queued before
+  // and during sign-up must survive until that person answers the analytics step.
   usePrivacy.getState().reset();
+  await clearUserData();
   if (reason) publishNotice(SIGN_OUT_NOTICES[reason]);
 }
 

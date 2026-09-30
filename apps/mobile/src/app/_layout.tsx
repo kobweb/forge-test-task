@@ -7,7 +7,7 @@ import { Stack, ThemeProvider, usePathname, type ErrorBoundaryProps } from 'expo
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { HeroUINativeProvider } from 'heroui-native';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -21,6 +21,9 @@ import { usePrivacy, usePrivacyHydrated } from '@/stores/privacy-store';
 import { useSession, useSessionHydrated } from '@/stores/session-store';
 
 void SplashScreen.preventAutoHideAsync();
+
+// Once per launch: the boot gate can settle more than once in a process.
+let appOpenedTracked = false;
 
 // Last-resort screen for a render error anywhere below. Plain RN + Uniwind tokens only, so it
 // renders even when the providers above are what failed.
@@ -89,6 +92,8 @@ function RootNavigator() {
   useEffect(() => {
     if (!ready) return;
     void SplashScreen.hideAsync();
+    if (appOpenedTracked) return;
+    appOpenedTracked = true;
     analytics.track('app_opened');
   }, [ready]);
 
@@ -96,8 +101,12 @@ function RootNavigator() {
     analytics.identify(userId);
   }, [userId]);
 
+  // One event per path change, however often the gate above re-settles.
+  const lastTrackedPath = useRef<string | null>(null);
   useEffect(() => {
-    if (ready) analytics.track('screen_viewed', { path: pathname });
+    if (!ready || lastTrackedPath.current === pathname) return;
+    lastTrackedPath.current = pathname;
+    analytics.track('screen_viewed', { path: pathname });
   }, [ready, pathname]);
 
   if (!ready) return null;

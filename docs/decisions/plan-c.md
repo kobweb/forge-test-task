@@ -17,3 +17,6 @@
 - `useUpdateMe` tells onboarding from a profile edit by `acceptConsent` in the request body · only the onboarding form sends it, and the event must fire at hook level · a future form that sends the consent again would be counted as onboarding
 - `session_opened` uses `useEffectEvent` keyed on the session id · the event needs the status at open time without re-firing when completing the session changes that status · none
 - `coach_message_sent` fires at send time in the screen, the reply and the failure at hook level · the source (prompt or typed) is only known where the message is composed · a send from a screen that unmounts at once would still be counted as sent
+- `app_opened` is guarded by a module-level flag and `screen_viewed` by the last tracked path · the boot gate settled more than once in a launch and both events were duplicated in the simulator run · none
+- `signOut()` resets the privacy store before it awaits the cache wipe · the route guard renders the sign-in screen first, and that `screen_viewed` went out under the old consent · none
+- Plan C was verified on iOS only, without per-task reviews, dark-mode shots or the Android glance · the user asked for the fastest finish on 2026-09-30 · the Android path (lazy `expo-notifications`) and the dark look of the new screens are unverified
