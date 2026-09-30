@@ -1,3 +1,8 @@
+# Loom
+
+https://www.loom.com/share/abf88979c4a742a19154360b6d6944e5
+https://www.loom.com/share/f00fa95e3f21459f8423cbcb5f526939 (small comment additionaly to main loom)
+
 # Forge
 
 > **Loom walkthrough:** _link coming with the final submission_
@@ -95,10 +100,3 @@ All from an iPhone 16 simulator; the full set is in [`docs/screenshots/`](docs/s
 - Tapping "Start training" on an empty onboarding form grows every field with its error and
   pushes the button below the fold. Scrolling to the first invalid field on submit would keep
   the person looking at what needs fixing instead of at a half-hidden button.
-
-## Supabase instead of Docker (optional)
-
-Set `DATABASE_URL` in `apps/api/.env` to your Supabase connection string, then run
-`pnpm db:push`. On the transaction pooler (port 6543) the API switches prepared statements off
-by itself (postgres.js `prepare: false`); direct and session-pooler connections work as they
-are. The e2e suite still runs against the local `forge_test` database (`TEST_DATABASE_URL`).
